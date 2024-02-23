@@ -1,2 +1,2 @@
 pub const PNG_SIGNATURE_LENGTH: usize = 0x8;
-pub const PNG_SIGNATURE: [u8; PNG_SIGNATURE_LENGTH] = [137, 80, 78, 71, 13, 10, 26, 10];
+pub const PNG_SIGNATURE: [u8; PNG_SIGNATURE_LENGTH] = [0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA];
