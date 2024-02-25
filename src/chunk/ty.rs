@@ -19,10 +19,6 @@ impl ChunkType {
         Ok(chunk)
     }
     #[inline(always)]
-    pub(crate) fn internal_clone(&self) -> Self {
-        Self { _type: self._type }
-    }
-    #[inline(always)]
     pub(crate) fn get_chunk_type(&self) -> [u8; 4] {
         self._type
     }

@@ -34,14 +34,6 @@ impl<'a> ChunkInfo<'a> {
         self.chunk_data
     }
     #[inline(always)]
-    pub(crate) fn clone_chunk(&self) -> ChunkHeader {
-        self.header.internal_clone()
-    }
-    #[inline(always)]
-    pub(crate) fn clone_crc(&self) -> ChunkCRC {
-        self.crc.internal_clone()
-    }
-    #[inline(always)]
     #[allow(unused)]
     fn get_chunk_as_slice(&self) -> &[u8] {
         unsafe {

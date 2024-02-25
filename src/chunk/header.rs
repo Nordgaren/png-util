@@ -58,11 +58,4 @@ impl ChunkHeader {
     pub fn set_chunk_type(&mut self, chunk_type: &str) -> bool {
         self.chunk_type.set_chunk_type(chunk_type)
     }
-    #[inline(always)]
-    pub(crate) fn internal_clone(&self) -> Self {
-        Self {
-            length: self.length,
-            chunk_type: self.chunk_type.internal_clone(),
-        }
-    }
 }

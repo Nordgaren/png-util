@@ -29,10 +29,6 @@ impl ChunkCRC {
         self.crc = crc(data).to_be_bytes();
     }
     #[inline(always)]
-    pub(crate) fn internal_clone(&self) -> Self {
-        Self { crc: self.crc }
-    }
-    #[inline(always)]
     pub(crate) fn get_raw_crc(&self) -> [u8; 4] {
         self.crc
     }
