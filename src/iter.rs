@@ -5,17 +5,18 @@ use crate::consts::PNG_SIGNATURE_LENGTH;
 use crate::PNGReader;
 use buffer_reader::BufferReader;
 
-pub struct Iter<'a> {
+/// An iterator that moves over the chunks of a PNG file.
+pub struct PNGIter<'a> {
     buffer: BufferReader<'a>,
     current_section: [u8; 4],
 }
 
 impl<'a> IntoIterator for PNGReader<'a> {
     type Item = ChunkRefs<'a>;
-    type IntoIter = Iter<'a>;
+    type IntoIter = PNGIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        Iter {
+        PNGIter {
             buffer: BufferReader::new(&self.buffer[PNG_SIGNATURE_LENGTH..]),
             current_section: [0; 4],
         }
@@ -24,20 +25,23 @@ impl<'a> IntoIterator for PNGReader<'a> {
 
 impl<'a> IntoIterator for &PNGReader<'a> {
     type Item = ChunkRefs<'a>;
-    type IntoIter = Iter<'a>;
+    type IntoIter = PNGIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        Iter {
+        PNGIter {
             buffer: BufferReader::new(&self.buffer[PNG_SIGNATURE_LENGTH..]),
             current_section: [0; 4],
         }
     }
 }
 
-impl<'a> Iterator for Iter<'a> {
+impl<'a> Iterator for PNGIter<'a> {
     type Item = ChunkRefs<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        // If the current_section is "IEND" then we have reached the end of the PNG file. There may
+        // be bytes remaining in the buffer, but there are no more PNG chunks, and this is the end of
+        // the PNG file.
         if &self.current_section == b"IEND" {
             return None;
         }

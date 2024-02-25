@@ -82,15 +82,19 @@ impl PNGReader<'_> {
 
         Ok(())
     }
+    /// Gets a `ChunkRefs` object that references the first chunk in the PNG with the provided type. Returns
+    /// `None` if not found.
     pub fn get_chunk_of_type(&self, chunk_type: &str) -> Option<ChunkRefs> {
         self.into_iter().find(|i| i.get_chunk_type() == chunk_type)
     }
+    /// Returns a `Vec<ChunkRefs>` with references to each chunk in the PNG of the provided type.
     pub fn get_chunks_of_type(&self, chunk_type: &str) -> Vec<ChunkRefs> {
         self.into_iter()
             .filter(|i| i.get_chunk_type() == chunk_type)
             .collect()
     }
-    pub fn get_chunk_info(&self) -> Vec<ChunkRefs> {
+    /// Get's references to all chunks in the PNG.
+    pub fn get_chunks(&self) -> Vec<ChunkRefs> {
         self.into_iter().collect()
     }
 }
@@ -106,7 +110,6 @@ mod tests {
     fn read_png() {
         let png_file = std::fs::read("ferris.png").expect("Could not read png file");
         let _ = PNGReader::new(&png_file[..]).expect("Could not validate PNG.");
-
         // for chunk in png {
         //     println!("{chunk:?}")
         // }
@@ -129,7 +132,7 @@ mod tests {
 
         let new_png_file = PNGBuilder::new()
             .with_png(&png)
-            .with_chunk(PNGChunk::new("teST", &[0, 1, 2, 3, 4, 5]).unwrap())
+            .with_chunk(&PNGChunk::new("teST", &[0, 1, 2, 3, 4, 5]).unwrap())
             .build()
             .expect("Could not build PNG file");
 
@@ -141,11 +144,11 @@ mod tests {
     fn new_png_chunks() {
         let png_file = std::fs::read("ferris.png").expect("Could not read png file");
         let png = PNGReader::new(&png_file[..]).expect("Could not validate PNG.");
-        let chunk_info = png.get_chunk_info();
+        let chunk_info = png.get_chunks();
 
         let new_png = PNGBuilder::new()
             .with_chunks(chunk_info)
-            .with_chunk(PNGChunk::new("teST", &[0, 1, 2, 3, 4, 5]).unwrap())
+            .with_chunk(&PNGChunk::new("teST", &[0, 1, 2, 3, 4, 5]).unwrap())
             .build()
             .expect("Could not build PNG file.");
 

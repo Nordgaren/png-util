@@ -32,6 +32,9 @@ impl ChunkCRC {
     pub(crate) fn set_crc_by_value(&mut self, crc: u32) {
         self.crc = crc.to_be_bytes()
     }
+    pub(crate) fn get_pointer(&self) -> *const u8 {
+        self.crc.as_ptr()
+    }
 }
 pub const fn crc(buffer: &[u8]) -> u32 {
     update_crc(u32::MAX, buffer) ^ u32::MAX
