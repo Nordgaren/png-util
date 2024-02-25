@@ -1,15 +1,16 @@
 use crate::chunk::crc::ChunkCRC;
 use crate::chunk::header::ChunkHeader;
-use crate::chunk::info::ChunkInfo;
+use crate::chunk::refs::ChunkRefs;
 use crate::chunk::ty::ChunkType;
 use crate::consts::{CHUNK_CRC_SIZE, CHUNK_HEADER_SIZE};
 
 pub mod crc;
 pub mod header;
-pub mod info;
+pub mod refs;
 mod traits;
 pub mod ty;
 
+/// A wrapper around a vector that contains PNG chunk data. This is just the individual chunk.
 pub struct PNGChunk {
     data: Vec<u8>,
 }
@@ -30,6 +31,9 @@ impl PNGChunk {
         chunk.calculate_and_set_crc();
 
         Ok(chunk)
+    }
+    pub fn as_chunk_refs(&self) -> ChunkRefs<'_> {
+        self.into()
     }
     pub fn as_slice(&self) -> &[u8] {
         &self.data[..]
@@ -104,8 +108,14 @@ impl PNGChunk {
     }
 }
 
-impl From<ChunkInfo<'_>> for PNGChunk {
-    fn from(chunk_info: ChunkInfo) -> Self {
+impl From<ChunkRefs<'_>> for PNGChunk {
+    fn from(chunk_info: ChunkRefs) -> Self {
         PNGChunk::new(chunk_info.get_chunk_type(), chunk_info.get_chunk_data()).unwrap()
+    }
+}
+
+impl<'a> From<&'a PNGChunk> for ChunkRefs<'a> {
+    fn from(chunk: &'a PNGChunk) -> ChunkRefs<'a> {
+        ChunkRefs::new(chunk.as_chunk_header(), chunk.get_chunk_data(), chunk.as_chunk_crc())
     }
 }

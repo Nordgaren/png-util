@@ -1,5 +1,5 @@
 use crate::consts::{PNG_SIGNATURE, PNG_SIGNATURE_LENGTH};
-use chunk::info::ChunkInfo;
+use chunk::refs::ChunkRefs;
 use std::io::{Error, ErrorKind};
 
 mod builder;
@@ -82,15 +82,15 @@ impl PNGReader<'_> {
 
         Ok(())
     }
-    pub fn get_chunk_of_type(&self, chunk_type: &str) -> Option<ChunkInfo> {
+    pub fn get_chunk_of_type(&self, chunk_type: &str) -> Option<ChunkRefs> {
         self.into_iter().find(|i| i.get_chunk_type() == chunk_type)
     }
-    pub fn get_chunks_of_type(&self, chunk_type: &str) -> Vec<ChunkInfo> {
+    pub fn get_chunks_of_type(&self, chunk_type: &str) -> Vec<ChunkRefs> {
         self.into_iter()
             .filter(|i| i.get_chunk_type() == chunk_type)
             .collect()
     }
-    pub fn get_chunk_info(&self) -> Vec<ChunkInfo> {
+    pub fn get_chunk_info(&self) -> Vec<ChunkRefs> {
         self.into_iter().collect()
     }
 }
@@ -150,5 +150,15 @@ mod tests {
         let new_png = PNGReader::new(&new_png[..]).expect("Could not validate PNG.");
 
         assert!(new_png.get_chunk_of_type("teST").is_some())
+    }
+
+
+    #[test]
+    fn chunk_info_test() {
+        let chunk = PNGChunk::new("teST", &[0, 1, 2, 3, 4, 5]).unwrap();
+
+        let info = chunk.as_chunk_refs();
+
+        assert_eq!("teST", info.get_chunk_type())
     }
 }

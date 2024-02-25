@@ -1,6 +1,6 @@
 use crate::chunk::crc::ChunkCRC;
 use crate::chunk::header::ChunkHeader;
-use crate::chunk::info::ChunkInfo;
+use crate::chunk::refs::ChunkRefs;
 use crate::consts::PNG_SIGNATURE_LENGTH;
 use crate::PNGReader;
 use buffer_reader::BufferReader;
@@ -11,7 +11,7 @@ pub struct Iter<'a> {
 }
 
 impl<'a> IntoIterator for PNGReader<'a> {
-    type Item = ChunkInfo<'a>;
+    type Item = ChunkRefs<'a>;
     type IntoIter = Iter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -23,7 +23,7 @@ impl<'a> IntoIterator for PNGReader<'a> {
 }
 
 impl<'a> IntoIterator for &PNGReader<'a> {
-    type Item = ChunkInfo<'a>;
+    type Item = ChunkRefs<'a>;
     type IntoIter = Iter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -35,7 +35,7 @@ impl<'a> IntoIterator for &PNGReader<'a> {
 }
 
 impl<'a> Iterator for Iter<'a> {
-    type Item = ChunkInfo<'a>;
+    type Item = ChunkRefs<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if &self.current_section == b"IEND" {
@@ -56,6 +56,6 @@ impl<'a> Iterator for Iter<'a> {
         // Get a reference to the crc value and then advance the buffer to the start of the next chunk.
         let crc = self.buffer.read_t::<ChunkCRC>().unwrap();
 
-        Some(ChunkInfo::new(chunk, chunk_data, crc))
+        Some(ChunkRefs::new(chunk, chunk_data, crc))
     }
 }

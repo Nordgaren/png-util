@@ -3,14 +3,16 @@ use crate::chunk::crc::ChunkCRC;
 use crate::chunk::header::ChunkHeader;
 use crate::chunk::ty::ChunkType;
 
+/// This is a structure that provides references to existing chunk data in a chunk. These chunks of
+/// data are contiguous, and must be next to each-other, in the current implementation.
 #[derive(Debug, Copy, Clone)]
-pub struct ChunkInfo<'a> {
+pub struct ChunkRefs<'a> {
     header: &'a ChunkHeader,
     chunk_data: &'a [u8],
     crc: &'a ChunkCRC,
 }
 
-impl<'a> ChunkInfo<'a> {
+impl<'a> ChunkRefs<'a> {
     #[inline(always)]
     pub fn get_length(&self) -> u32 {
         self.header.get_length()
@@ -58,10 +60,10 @@ impl<'a> ChunkInfo<'a> {
     }
 }
 
-impl<'a> ChunkInfo<'a> {
-    pub fn new(chunk: &'a ChunkHeader, chunk_data: &'a [u8], crc: &'a ChunkCRC) -> Self {
-        ChunkInfo {
-            header: chunk,
+impl<'a> ChunkRefs<'a> {
+    pub fn new(header: &'a ChunkHeader, chunk_data: &'a [u8], crc: &'a ChunkCRC) -> Self {
+        ChunkRefs {
+            header,
             chunk_data,
             crc,
         }
