@@ -41,6 +41,9 @@ impl ChunkData {
     fn get_chunk_header_mut(&self) -> &mut ChunkHeader {
         unsafe { &mut *(self.chunk.as_ptr() as *mut ChunkHeader) }
     }
+    pub fn get_chunk_as_slice(&self) -> &[u8] {
+        &self.chunk[..]
+    }
     pub fn get_chunk_data(&self) -> &[u8] {
         let header = self.get_chunk_header();
         &self.chunk[8..8 + header.get_length() as usize]
@@ -122,17 +125,11 @@ impl PNGBuilder {
     pub fn build(self) -> Vec<u8> {
         let mut png = PNG_SIGNATURE.to_vec();
         for section in self.chunks {
-            png.extend(section.get_chunk_header().get_length_raw());
-            png.extend(section.get_chunk_header().get_chunk_type());
-            png.extend(section.get_chunk_data());
-            png.extend(section.get_chunk_crc().get_raw_crc())
+            png.extend(section.get_chunk_as_slice());
         }
 
         let end_section = ChunkData::new("IEND", &[]).unwrap();
-        png.extend(end_section.get_chunk_header().get_length_raw());
-        png.extend(end_section.get_chunk_header().get_chunk_type());
-        png.extend(end_section.get_chunk_data());
-        png.extend(end_section.get_chunk_crc().get_raw_crc());
+        png.extend(end_section.get_chunk_as_slice());
 
         png
     }
