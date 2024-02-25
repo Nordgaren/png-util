@@ -3,7 +3,7 @@ use crate::chunk::crc::ChunkCRC;
 use crate::chunk::header::ChunkHeader;
 use crate::chunk::info::ChunkInfo;
 use crate::consts::PNG_SIGNATURE;
-use crate::PNG;
+use crate::PNGReader;
 
 pub struct ChunkData {
     header: ChunkHeader,
@@ -68,7 +68,7 @@ impl PNGBuilder {
 
         self
     }
-    pub fn with_png(mut self, png: &PNG<'_>) -> Self {
+    pub fn with_png(mut self, png: &PNGReader<'_>) -> Self {
         for chunk in png {
             self = self.with_chunk(chunk)
         }

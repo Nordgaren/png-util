@@ -2,7 +2,7 @@ use crate::chunk::crc::ChunkCRC;
 use crate::chunk::header::ChunkHeader;
 use crate::chunk::info::ChunkInfo;
 use crate::consts::PNG_SIGNATURE_LENGTH;
-use crate::PNG;
+use crate::PNGReader;
 use buffer_reader::BufferReader;
 
 pub struct Iter<'a> {
@@ -10,7 +10,7 @@ pub struct Iter<'a> {
     current_section: [u8; 4],
 }
 
-impl<'a> IntoIterator for PNG<'a> {
+impl<'a> IntoIterator for PNGReader<'a> {
     type Item = ChunkInfo<'a>;
     type IntoIter = Iter<'a>;
 
@@ -22,7 +22,7 @@ impl<'a> IntoIterator for PNG<'a> {
     }
 }
 
-impl<'a> IntoIterator for &PNG<'a> {
+impl<'a> IntoIterator for &PNGReader<'a> {
     type Item = ChunkInfo<'a>;
     type IntoIter = Iter<'a>;
 

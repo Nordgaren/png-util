@@ -8,16 +8,16 @@ mod consts;
 mod iter;
 
 /// A Rust type that is able to enumerate and inspect a buffer that is a valid PNG file.
-pub struct PNG<'a> {
+pub struct PNGReader<'a> {
     buffer: &'a [u8],
 }
 
-impl<'a> PNG<'a> {
+impl<'a> PNGReader<'a> {
     /// Creates a new PNG file and then validates the contents of the png header and each chunk in the
     /// png. This will calculate the crc of every chunk, so it may take some time, if your png contains
     /// large chunks.
     pub fn new(buffer: &'a [u8]) -> std::io::Result<Self> {
-        let png = PNG { buffer };
+        let png = PNGReader { buffer };
 
         png.validate_png()?;
         png.validate_chunks()?;
@@ -32,11 +32,11 @@ impl<'a> PNG<'a> {
     /// will at least check that the header is correct. The user can also call the `ChunkInfo::validate_crc()`
     /// method on each individual chunk, to validate the crcs of the chunks the user cares about.
     pub unsafe fn new_unchecked(buffer: &'a [u8]) -> Self {
-        PNG { buffer }
+        PNGReader { buffer }
     }
 }
 
-impl PNG<'_> {
+impl PNGReader<'_> {
     /// Checks that the provided buffer has a valid PNG signature. Returns an error if the buffer is
     /// not long enough or the magic bytes at the start of the file are not the correct PNG signature.
     pub fn validate_png(&self) -> std::io::Result<()> {
@@ -99,13 +99,13 @@ impl PNG<'_> {
 #[cfg(test)]
 mod tests {
     use crate::builder::{ChunkData, PNGBuilder};
-    use crate::PNG;
+    use crate::PNGReader;
 
     #[test]
     #[allow(arithmetic_overflow)]
     fn read_png() {
         let png_file = std::fs::read("ferris.png").expect("Could not read png file");
-        let _ = PNG::new(&png_file[..]).expect("Could not validate PNG.");
+        let _ = PNGReader::new(&png_file[..]).expect("Could not validate PNG.");
 
         // for chunk in png {
         //     println!("{chunk:?}")
@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn new_png() {
         let png_file = std::fs::read("ferris.png").expect("Could not read png file");
-        let png = PNG::new(&png_file[..]).expect("Could not validate PNG.");
+        let png = PNGReader::new(&png_file[..]).expect("Could not validate PNG.");
 
         let new_png_file = PNGBuilder::new().with_png(&png).build();
 
@@ -125,14 +125,14 @@ mod tests {
     #[test]
     fn new_png_section() {
         let png_file = std::fs::read("ferris.png").expect("Could not read png file");
-        let png = PNG::new(&png_file[..]).expect("Could not validate PNG.");
+        let png = PNGReader::new(&png_file[..]).expect("Could not validate PNG.");
 
         let new_png_file = PNGBuilder::new()
             .with_png(&png)
             .with_chunk(ChunkData::new("teST", vec![0, 1, 2, 3, 4, 5]).unwrap())
             .build();
 
-        let new_png = PNG::new(&new_png_file[..]).expect("Could not validate PNG.");
+        let new_png = PNGReader::new(&new_png_file[..]).expect("Could not validate PNG.");
 
         assert!(new_png.get_chunk_of_type("teST").is_some())
     }
@@ -140,7 +140,7 @@ mod tests {
     #[test]
     fn new_png_chunks() {
         let png_file = std::fs::read("ferris.png").expect("Could not read png file");
-        let png = PNG::new(&png_file[..]).expect("Could not validate PNG.");
+        let png = PNGReader::new(&png_file[..]).expect("Could not validate PNG.");
         let chunk_info = png.get_chunk_info();
 
         let new_png = PNGBuilder::new()
