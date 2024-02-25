@@ -1,6 +1,5 @@
-use std::fmt::{Debug, Formatter};
-use std::io::{Error, ErrorKind};
 use crate::chunk::ty::ChunkType;
+use std::fmt::{Debug, Formatter};
 
 #[repr(C)]
 pub struct ChunkHeader {
@@ -22,20 +21,10 @@ impl Debug for ChunkHeader {
 
 impl ChunkHeader {
     pub fn new(length: u32, chunk_type_str: &str) -> std::io::Result<Self> {
-        let mut chunk = ChunkHeader {
-            length: [0; 4],
-            chunk_type: ChunkType::new(),
-        };
-
-        if !chunk.set_chunk_type(chunk_type_str) {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "Chunk type is not 4 bytes long. Invalid Chunk type.",
-            ));
-        }
-        chunk.set_length(length);
-
-        Ok(chunk)
+        Ok(ChunkHeader {
+            length: length.to_be_bytes(),
+            chunk_type: ChunkType::new(chunk_type_str)?,
+        })
     }
     #[inline(always)]
     pub fn get_length(&self) -> u32 {
@@ -54,7 +43,7 @@ impl ChunkHeader {
         self.chunk_type.as_str()
     }
     #[inline(always)]
-    pub fn get_chunk_type(&self) -> [u8;4] {
+    pub fn get_chunk_type(&self) -> [u8; 4] {
         self.chunk_type.get_chunk_type()
     }
     #[inline(always)]

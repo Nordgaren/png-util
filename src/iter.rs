@@ -1,9 +1,9 @@
-use buffer_reader::BufferReader;
-use crate::chunk::header::ChunkHeader;
 use crate::chunk::crc::ChunkCRC;
+use crate::chunk::header::ChunkHeader;
 use crate::chunk::info::ChunkInfo;
 use crate::consts::PNG_SIGNATURE_LENGTH;
 use crate::PNG;
+use buffer_reader::BufferReader;
 
 pub struct Iter<'a> {
     buffer: BufferReader<'a>,

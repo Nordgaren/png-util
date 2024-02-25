@@ -1,3 +1,5 @@
+use std::io::{Error, ErrorKind};
+
 #[repr(C)]
 pub struct ChunkType {
     _type: [u8; 4],
@@ -5,17 +7,23 @@ pub struct ChunkType {
 const _: () = assert!(std::mem::size_of::<ChunkType>() == std::mem::size_of::<u32>());
 
 impl ChunkType {
-    pub(crate) fn new() -> ChunkType {
-        ChunkType { _type: [0; 4] }
+    pub fn new(chunk_type_str: &str) -> std::io::Result<Self> {
+        let mut chunk = ChunkType { _type: [0; 4] };
+        if !chunk.set_chunk_type(chunk_type_str) {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "Chunk type is not 4 bytes long. Invalid Chunk type.",
+            ));
+        }
+
+        Ok(chunk)
     }
     #[inline(always)]
     pub(crate) fn internal_clone(&self) -> Self {
-        Self {
-            _type: self._type,
-        }
+        Self { _type: self._type }
     }
     #[inline(always)]
-    pub(crate) fn get_chunk_type(&self) -> [u8;4] {
+    pub(crate) fn get_chunk_type(&self) -> [u8; 4] {
         self._type
     }
     #[inline(always)]

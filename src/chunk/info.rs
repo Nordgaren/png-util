@@ -1,6 +1,6 @@
-use crate::chunk::header::ChunkHeader;
-use crate::chunk::crc::ChunkCRC;
 use crate::chunk::crc;
+use crate::chunk::crc::ChunkCRC;
+use crate::chunk::header::ChunkHeader;
 
 #[derive(Debug, Copy, Clone)]
 pub struct ChunkInfo<'a> {

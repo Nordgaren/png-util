@@ -1,6 +1,6 @@
 use crate::chunk::crc;
-use crate::chunk::header::ChunkHeader;
 use crate::chunk::crc::ChunkCRC;
+use crate::chunk::header::ChunkHeader;
 use crate::chunk::info::ChunkInfo;
 use crate::consts::PNG_SIGNATURE;
 use crate::PNG;

@@ -68,7 +68,7 @@ const fn make_crc_table() -> [u32; 256] {
             if c & 1 != 0 {
                 c = 0xEDB88320 ^ c >> 1;
             } else {
-                c = c >> 1;
+                c >>= 1;
             }
             table[n] = c;
             k += 1;
