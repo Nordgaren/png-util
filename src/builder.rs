@@ -35,7 +35,7 @@ impl PNGBuilder {
     }
     pub fn build(self) -> Vec<u8> {
         let mut png = PNG_SIGNATURE.to_vec();
-        // @TODO: Check that we stat with a valid IHDR chunk
+        // @TODO: Check that we start with a valid IHDR chunk
         for chunk in self.chunks {
             png.extend(chunk.as_slice());
         }
