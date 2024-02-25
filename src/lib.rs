@@ -114,7 +114,6 @@ mod tests {
     #[test]
     fn new_png() {
         let png_file = std::fs::read("ferris.png").expect("Could not read png file");
-        let png = PNG::new(&png_file[..]).expect("Could not parse PNG header.");
         let png = PNG::new(&png_file[..]).expect("Could not validate PNG.");
 
         let new_png_file = PNGBuilder::new().with_png(&png).build();
