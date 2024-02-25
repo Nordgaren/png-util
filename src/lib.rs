@@ -83,8 +83,7 @@ impl PNGReader<'_> {
         Ok(())
     }
     pub fn get_chunk_of_type(&self, chunk_type: &str) -> Option<ChunkInfo> {
-        self.into_iter()
-            .find(|i| i.get_chunk_type() == chunk_type)
+        self.into_iter().find(|i| i.get_chunk_type() == chunk_type)
     }
     pub fn get_chunks_of_type(&self, chunk_type: &str) -> Vec<ChunkInfo> {
         self.into_iter()
@@ -98,7 +97,8 @@ impl PNGReader<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::builder::{PNGChunk, PNGBuilder};
+    use crate::builder::PNGBuilder;
+    use crate::chunk::PNGChunk;
     use crate::PNGReader;
 
     #[test]

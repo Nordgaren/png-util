@@ -4,6 +4,7 @@ use std::fmt::{Debug, Formatter};
 pub struct ChunkCRC {
     crc: [u8; 4],
 }
+
 const _: () = assert!(std::mem::size_of::<ChunkCRC>() == std::mem::size_of::<u32>());
 
 impl Debug for ChunkCRC {
@@ -27,6 +28,9 @@ impl ChunkCRC {
     }
     pub fn set_crc(&mut self, data: &[u8]) {
         self.crc = crc(data).to_be_bytes();
+    }
+    pub(crate) fn set_crc_by_value(&mut self, crc: u32) {
+        self.crc = crc.to_be_bytes()
     }
 }
 pub const fn crc(buffer: &[u8]) -> u32 {
