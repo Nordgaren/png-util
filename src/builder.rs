@@ -3,74 +3,93 @@ use crate::chunk::crc::ChunkCRC;
 use crate::chunk::header::ChunkHeader;
 use crate::chunk::info::ChunkInfo;
 use crate::chunk::ty::ChunkType;
-use crate::consts::PNG_SIGNATURE;
+use crate::consts::{CHUNK_CRC_SIZE, CHUNK_HEADER_SIZE, PNG_SIGNATURE};
 use crate::PNGReader;
-use std::io::Read;
 
-pub struct ChunkData {
-    chunk: Vec<u8>,
+pub struct NewChunk {
+    data: Vec<u8>,
 }
 
 #[allow(unused)]
-impl ChunkData {
-    pub fn new(chunk_type: &str, mut chunk_data: &[u8]) -> std::io::Result<ChunkData> {
-        let mut chunk = vec![0; std::mem::size_of::<ChunkHeader>()];
-        chunk.extend(chunk_data);
+impl NewChunk {
+    pub fn new(chunk_type: &str, mut chunk_data: &[u8]) -> std::io::Result<NewChunk> {
+        let mut data = vec![0; CHUNK_HEADER_SIZE];
+        data.extend(chunk_data);
 
-        let mut chunk = ChunkData { chunk };
+        let mut chunk = NewChunk { data };
 
-        let mut header = chunk.get_chunk_header_mut();
+        let mut header = chunk.as_chunk_header_mut();
         header.set_length(chunk_data.len() as u32);
         header.set_chunk_type(chunk_type);
 
-        chunk.chunk.extend(&[0; std::mem::size_of::<ChunkCRC>()]);
+        chunk.data.resize(chunk.data.len() + CHUNK_CRC_SIZE, 0);
 
-        chunk.get_chunk_crc_mut().set_crc(chunk.get_crc_data());
+        chunk.as_chunk_crc_mut().set_crc(chunk.get_crc_data());
 
         Ok(chunk)
     }
-    pub fn write_data(&mut self, mut chunk_data: impl Read) -> bool {
-        self.chunk.truncate(std::mem::size_of::<ChunkHeader>());
-        chunk_data.read(&mut self.chunk);
-
-        true
+    pub fn as_slice(&self) -> &[u8] {
+        &self.data[..]
     }
-    fn get_chunk_header(&self) -> &ChunkHeader {
-        unsafe { &*(self.chunk.as_ptr() as *const ChunkHeader) }
+    // Chunk Header functions
+    pub fn get_length(&self) -> u32 {
+        self.as_chunk_header().get_length()
     }
-    fn get_chunk_header_mut(&self) -> &mut ChunkHeader {
-        unsafe { &mut *(self.chunk.as_ptr() as *mut ChunkHeader) }
+    pub fn set_length(&mut self, len: u32) -> bool {
+        self.as_chunk_header_mut().set_length(len)
     }
-    pub fn get_chunk_as_slice(&self) -> &[u8] {
-        &self.chunk[..]
+    pub fn get_chunk_type(&self) -> &str {
+        self.as_chunk_header().get_chunk_type_as_str()
     }
+    pub fn set_chunk_type(&mut self, chunk_type: &str) -> bool {
+        self.as_chunk_header_mut().set_chunk_type(chunk_type)
+    }
+    fn as_chunk_header(&self) -> &ChunkHeader {
+        unsafe { &*(self.data.as_ptr() as *const ChunkHeader) }
+    }
+    fn as_chunk_header_mut(&self) -> &mut ChunkHeader {
+        unsafe { &mut *(self.data.as_ptr() as *mut ChunkHeader) }
+    }
+    // Chunk Data
     pub fn get_chunk_data(&self) -> &[u8] {
-        let header = self.get_chunk_header();
-        &self.chunk[8..8 + header.get_length() as usize]
+        let header = self.as_chunk_header();
+        let data_start = CHUNK_HEADER_SIZE;
+        let data_end = data_start + header.get_length() as usize;
+        &self.data[data_start..data_end]
     }
-    fn get_chunk_crc(&self) -> &ChunkCRC {
-        let header = self.get_chunk_header();
-        let data_len = header.get_length() as usize + std::mem::size_of::<ChunkHeader>();
-        let crc_buffer = &self.chunk[data_len..];
-        unsafe { &*(crc_buffer.as_ptr() as *const ChunkCRC) }
+    pub fn get_chunk_data_mut(&mut self) -> &mut [u8] {
+        let header = self.as_chunk_header();
+        let data_start = CHUNK_HEADER_SIZE;
+        let data_end = data_start + header.get_length() as usize;
+        &mut self.data[data_start..data_end]
     }
-    fn get_chunk_crc_mut(&self) -> &mut ChunkCRC {
-        let header = self.get_chunk_header();
-        let data_len = header.get_length() as usize + std::mem::size_of::<ChunkHeader>();
-        let crc_buffer = &self.chunk[data_len..];
-        unsafe { &mut *(crc_buffer.as_ptr() as *mut ChunkCRC) }
-    }
+    // CRC functions
     pub fn validate_crc(&self) -> bool {
-        self.get_chunk_crc().validate_crc(&self.get_crc_data()[..])
+        self.as_chunk_crc().validate_crc(&self.get_crc_data()[..])
     }
     pub fn calculate_crc(&self) -> u32 {
-        crc::crc(&self.get_crc_data()[..])
+        crc::crc(self.get_crc_data())
     }
     pub fn get_crc(&self) -> u32 {
-        self.get_chunk_crc().get_crc()
+        self.as_chunk_crc().get_crc()
+    }
+    pub fn set_crc(&mut self, data: &[u8]) {
+        self.as_chunk_crc_mut().set_crc(data)
+    }
+    fn as_chunk_crc(&self) -> &ChunkCRC {
+        let header = self.as_chunk_header();
+        let data_len = header.get_length() as usize + std::mem::size_of::<ChunkHeader>();
+        let crc_buffer = &self.data[data_len..];
+        unsafe { &*(crc_buffer.as_ptr() as *const ChunkCRC) }
+    }
+    fn as_chunk_crc_mut(&self) -> &mut ChunkCRC {
+        let header = self.as_chunk_header();
+        let data_len = header.get_length() as usize + std::mem::size_of::<ChunkHeader>();
+        let crc_buffer = &self.data[data_len..];
+        unsafe { &mut *(crc_buffer.as_ptr() as *mut ChunkCRC) }
     }
     fn get_crc_data(&self) -> &[u8] {
-        let header = self.get_chunk_header();
+        let header = self.as_chunk_header();
 
         unsafe {
             std::slice::from_raw_parts(
@@ -81,10 +100,10 @@ impl ChunkData {
     }
 }
 
-impl From<ChunkInfo<'_>> for ChunkData {
+impl From<ChunkInfo<'_>> for NewChunk {
     fn from(chunk_info: ChunkInfo) -> Self {
-        ChunkData::new(
-            chunk_info.get_chunk_type_as_str(),
+        NewChunk::new(
+            chunk_info.get_chunk_type(),
             chunk_info.get_chunk_data(),
         )
         .unwrap()
@@ -92,16 +111,16 @@ impl From<ChunkInfo<'_>> for ChunkData {
 }
 
 pub struct PNGBuilder {
-    chunks: Vec<ChunkData>,
+    chunks: Vec<NewChunk>,
 }
 
 impl PNGBuilder {
     pub fn new() -> Self {
         PNGBuilder { chunks: vec![] }
     }
-    pub fn with_chunk(mut self, chunk: impl Into<ChunkData>) -> Self {
+    pub fn with_chunk(mut self, chunk: impl Into<NewChunk>) -> Self {
         let chunk = chunk.into();
-        if chunk.get_chunk_header().get_chunk_type_as_str() == "IEND" {
+        if chunk.as_chunk_header().get_chunk_type_as_str() == "IEND" {
             return self;
         }
         self.chunks.push(chunk);
@@ -115,7 +134,7 @@ impl PNGBuilder {
 
         self
     }
-    pub fn with_chunks(mut self, chunks: Vec<impl Into<ChunkData>>) -> Self {
+    pub fn with_chunks(mut self, chunks: Vec<impl Into<NewChunk>>) -> Self {
         for chunk in chunks {
             self = self.with_chunk(chunk)
         }
@@ -124,12 +143,12 @@ impl PNGBuilder {
     }
     pub fn build(self) -> Vec<u8> {
         let mut png = PNG_SIGNATURE.to_vec();
-        for section in self.chunks {
-            png.extend(section.get_chunk_as_slice());
+        for chunk in self.chunks {
+            png.extend(chunk.as_slice());
         }
 
-        let end_section = ChunkData::new("IEND", &[]).unwrap();
-        png.extend(end_section.get_chunk_as_slice());
+        let end_section = NewChunk::new("IEND", &[]).unwrap();
+        png.extend(end_section.as_slice());
 
         png
     }

@@ -16,22 +16,24 @@ impl<'a> ChunkInfo<'a> {
         self.header.get_length()
     }
     #[inline(always)]
-    pub fn get_chunk_type_as_str(&self) -> &str {
+    pub fn get_chunk_type(&self) -> &str {
         self.header.get_chunk_type_as_str()
-    }
-    #[inline(always)]
-    pub fn get_crc(&self) -> u32 {
-        self.crc.get_crc()
-    }
-    pub fn validate_crc(&self) -> bool {
-        self.crc.validate_crc(self.get_crc_data())
-    }
-    pub fn calculate_crc(&self) -> u32 {
-        crc::crc(self.get_crc_data())
     }
     #[inline(always)]
     pub fn get_chunk_data(&self) -> &[u8] {
         self.chunk_data
+    }
+    #[inline(always)]
+    pub fn validate_crc(&self) -> bool {
+        self.crc.validate_crc(self.get_crc_data())
+    }
+    #[inline(always)]
+    pub fn calculate_crc(&self) -> u32 {
+        crc::crc(self.get_crc_data())
+    }
+    #[inline(always)]
+    pub fn get_crc(&self) -> u32 {
+        self.crc.get_crc()
     }
     #[inline(always)]
     #[allow(unused)]

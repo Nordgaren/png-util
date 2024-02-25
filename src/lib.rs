@@ -64,7 +64,7 @@ impl PNGReader<'_> {
         for (i, chunk_info) in self.into_iter().enumerate() {
             if !chunk_info.validate_crc() {
                 err.push_str(&format!("CRC failed. Chunk #: {i} Chunk type: {}, Chunk length: {:X}, Chunk crc: {:X}, Calculated crc: {:X}",
-                                      chunk_info.get_chunk_type_as_str(),
+                                      chunk_info.get_chunk_type(),
                                       chunk_info.get_length(),
                                       chunk_info.get_crc(),
                                       chunk_info.get_crc()),
@@ -84,11 +84,11 @@ impl PNGReader<'_> {
     }
     pub fn get_chunk_of_type(&self, chunk_type: &str) -> Option<ChunkInfo> {
         self.into_iter()
-            .find(|i| i.get_chunk_type_as_str() == chunk_type)
+            .find(|i| i.get_chunk_type() == chunk_type)
     }
     pub fn get_chunks_of_type(&self, chunk_type: &str) -> Vec<ChunkInfo> {
         self.into_iter()
-            .filter(|i| i.get_chunk_type_as_str() == chunk_type)
+            .filter(|i| i.get_chunk_type() == chunk_type)
             .collect()
     }
     pub fn get_chunk_info(&self) -> Vec<ChunkInfo> {
@@ -98,7 +98,7 @@ impl PNGReader<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::builder::{ChunkData, PNGBuilder};
+    use crate::builder::{NewChunk, PNGBuilder};
     use crate::PNGReader;
 
     #[test]
@@ -129,14 +129,13 @@ mod tests {
 
         let new_png_file = PNGBuilder::new()
             .with_png(&png)
-            .with_chunk(ChunkData::new("teST", &[0, 1, 2, 3, 4, 5]).unwrap())
+            .with_chunk(NewChunk::new("teST", &[0, 1, 2, 3, 4, 5]).unwrap())
             .build();
 
         let new_png = PNGReader::new(&new_png_file[..]).expect("Could not validate PNG.");
 
         assert!(new_png.get_chunk_of_type("teST").is_some())
     }
-
     #[test]
     fn new_png_chunks() {
         let png_file = std::fs::read("ferris.png").expect("Could not read png file");
@@ -145,7 +144,7 @@ mod tests {
 
         let new_png = PNGBuilder::new()
             .with_chunks(chunk_info)
-            .with_chunk(ChunkData::new("teST", &[0, 1, 2, 3, 4, 5]).unwrap())
+            .with_chunk(NewChunk::new("teST", &[0, 1, 2, 3, 4, 5]).unwrap())
             .build();
 
         let new_png = PNGReader::new(&new_png[..]).expect("Could not validate PNG.");

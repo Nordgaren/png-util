@@ -19,15 +19,15 @@ impl ChunkType {
         Ok(chunk)
     }
     #[inline(always)]
-    pub(crate) fn get_chunk_type(&self) -> [u8; 4] {
+    pub fn get_chunk_type(&self) -> [u8; 4] {
         self._type
     }
     #[inline(always)]
-    pub(crate) fn as_str(&self) -> &str {
+    pub fn as_str(&self) -> &str {
         unsafe { std::str::from_utf8_unchecked(&self._type) }
     }
     #[inline(always)]
-    pub(crate) fn set_chunk_type(&mut self, chunk_type: &str) -> bool {
+    pub fn set_chunk_type(&mut self, chunk_type: &str) -> bool {
         if self._type.len() != 4 {
             return false;
         }

@@ -34,10 +34,6 @@ impl ChunkHeader {
     pub fn get_length(&self) -> u32 {
         u32::from_be_bytes(self.length)
     }
-    #[inline(always)]
-    pub(crate) fn get_length_raw(&self) -> [u8; 4] {
-        self.length
-    }
     pub fn set_length(&mut self, length: u32) -> bool {
         if length > 0x80000000 {
             return false;
