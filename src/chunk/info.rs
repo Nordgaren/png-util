@@ -1,6 +1,7 @@
 use crate::chunk::crc;
 use crate::chunk::crc::ChunkCRC;
 use crate::chunk::header::ChunkHeader;
+use crate::chunk::ty::ChunkType;
 
 #[derive(Debug, Copy, Clone)]
 pub struct ChunkInfo<'a> {
@@ -46,7 +47,9 @@ impl<'a> ChunkInfo<'a> {
         unsafe {
             std::slice::from_raw_parts(
                 self.header.get_pointer(),
-                self.header.get_length() as usize + std::mem::size_of::<ChunkHeader>() + std::mem::size_of::<ChunkCRC>(),
+                self.header.get_length() as usize
+                    + std::mem::size_of::<ChunkHeader>()
+                    + std::mem::size_of::<ChunkCRC>(),
             )
         }
     }
@@ -55,7 +58,7 @@ impl<'a> ChunkInfo<'a> {
         unsafe {
             std::slice::from_raw_parts(
                 self.header.get_chunk_type_as_str().as_ptr(),
-                self.header.get_length() as usize + 4,
+                self.header.get_length() as usize + std::mem::size_of::<ChunkType>(),
             )
         }
     }

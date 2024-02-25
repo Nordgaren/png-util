@@ -129,7 +129,7 @@ mod tests {
 
         let new_png_file = PNGBuilder::new()
             .with_png(&png)
-            .with_chunk(ChunkData::new("teST", vec![0, 1, 2, 3, 4, 5]).unwrap())
+            .with_chunk(ChunkData::new("teST", &[0, 1, 2, 3, 4, 5]).unwrap())
             .build();
 
         let new_png = PNGReader::new(&new_png_file[..]).expect("Could not validate PNG.");
@@ -145,9 +145,11 @@ mod tests {
 
         let new_png = PNGBuilder::new()
             .with_chunks(chunk_info)
-            .with_chunk(ChunkData::new("FUKU", vec![0, 1, 2, 3, 4, 5]).unwrap())
+            .with_chunk(ChunkData::new("teST", &[0, 1, 2, 3, 4, 5]).unwrap())
             .build();
 
-        std::fs::write("ferris3.png", new_png).unwrap()
+        let new_png = PNGReader::new(&new_png[..]).expect("Could not validate PNG.");
+
+        assert!(new_png.get_chunk_of_type("teST").is_some())
     }
 }
