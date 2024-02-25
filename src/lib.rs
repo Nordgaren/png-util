@@ -117,7 +117,7 @@ mod tests {
         let png_file = std::fs::read("ferris.png").expect("Could not read png file");
         let png = PNGReader::new(&png_file[..]).expect("Could not validate PNG.");
 
-        let new_png_file = PNGBuilder::new().with_png(&png).build();
+        let new_png_file = PNGBuilder::new().with_png(&png).build().expect("Could not build PNG file");
 
         std::fs::write("ferris2.png", new_png_file).unwrap()
     }
@@ -130,7 +130,8 @@ mod tests {
         let new_png_file = PNGBuilder::new()
             .with_png(&png)
             .with_chunk(PNGChunk::new("teST", &[0, 1, 2, 3, 4, 5]).unwrap())
-            .build();
+            .build()
+            .expect("Could not build PNG file");
 
         let new_png = PNGReader::new(&new_png_file[..]).expect("Could not validate PNG.");
 
@@ -145,7 +146,8 @@ mod tests {
         let new_png = PNGBuilder::new()
             .with_chunks(chunk_info)
             .with_chunk(PNGChunk::new("teST", &[0, 1, 2, 3, 4, 5]).unwrap())
-            .build();
+            .build()
+            .expect("Could not build PNG file.");
 
         let new_png = PNGReader::new(&new_png[..]).expect("Could not validate PNG.");
 

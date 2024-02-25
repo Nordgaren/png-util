@@ -1,3 +1,4 @@
+use std::io::{Error, ErrorKind};
 use crate::chunk::PNGChunk;
 use crate::consts::PNG_SIGNATURE;
 use crate::PNGReader;
@@ -33,16 +34,23 @@ impl PNGBuilder {
 
         self
     }
-    pub fn build(self) -> Vec<u8> {
+    pub fn build(self) -> std::io::Result<Vec<u8>> {
         let mut png = PNG_SIGNATURE.to_vec();
-        // @TODO: Check that we start with a valid IHDR chunk
+        let chunk = self.chunks.first().unwrap();
+        if chunk.get_chunk_type() != "IHDR" {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "Valid IHDR chunk not provided"
+            ))
+        }
+
         for chunk in self.chunks {
             png.extend(chunk.as_slice());
         }
 
-        let end_section = PNGChunk::new("IEND", &[]).unwrap();
+        let end_section = PNGChunk::new("IEND", &[])?;
         png.extend(end_section.as_slice());
 
-        png
+        Ok(png)
     }
 }

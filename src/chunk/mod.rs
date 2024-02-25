@@ -1,3 +1,4 @@
+use std::io::{Error, ErrorKind};
 use crate::chunk::crc::ChunkCRC;
 use crate::chunk::header::ChunkHeader;
 use crate::chunk::refs::ChunkRefs;
@@ -25,8 +26,19 @@ impl PNGChunk {
         let mut chunk = PNGChunk { data };
 
         let header = chunk.as_chunk_header_mut();
-        header.set_length(chunk_data.len() as u32);
-        header.set_chunk_type(chunk_type);
+        if !header.set_length(chunk_data.len() as u32) {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                format!("Chunk data is too long.\nMax: 0x80000000\nLen: 0x{:08X}", chunk_data.len())
+            ))
+        };
+        // #TODO: Add reasons chunk type could not be set.
+        if !header.set_chunk_type(chunk_type) {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                format!("Chunk type unable to be set")
+            ))
+        }
 
         chunk.calculate_and_set_crc();
 
