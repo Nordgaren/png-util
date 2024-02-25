@@ -64,8 +64,8 @@ impl PNGReader<'_> {
         for (i, chunk_info) in self.into_iter().enumerate() {
             if !chunk_info.validate_crc() {
                 err.push_str(&format!("CRC failed. Chunk #: {i} Chunk type: {}, Chunk length: {:X}, Chunk crc: {:X}, Calculated crc: {:X}",
-                                      chunk_info.get_header().get_chunk_type_str(),
-                                      chunk_info.get_header().get_length(),
+                                      chunk_info.get_chunk_type_as_str(),
+                                      chunk_info.get_length(),
                                       chunk_info.get_crc(),
                                       chunk_info.get_crc()),
                 );
@@ -84,11 +84,11 @@ impl PNGReader<'_> {
     }
     pub fn get_chunk_of_type(&self, chunk_type: &str) -> Option<ChunkInfo> {
         self.into_iter()
-            .find(|i| i.get_header().get_chunk_type_str() == chunk_type)
+            .find(|i| i.get_chunk_type_as_str() == chunk_type)
     }
     pub fn get_chunks_of_type(&self, chunk_type: &str) -> Vec<ChunkInfo> {
         self.into_iter()
-            .filter(|i| i.get_header().get_chunk_type_str() == chunk_type)
+            .filter(|i| i.get_chunk_type_as_str() == chunk_type)
             .collect()
     }
     pub fn get_chunk_info(&self) -> Vec<ChunkInfo> {

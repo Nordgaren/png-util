@@ -10,6 +10,7 @@ pub struct ChunkData {
     chunk_data: Vec<u8>,
     crc: ChunkCRC,
 }
+#[allow(unused)]
 impl ChunkData {
     pub fn new(chunk_type: &str, chunk_data: Vec<u8>) -> std::io::Result<ChunkData> {
         let mut data = chunk_type.as_bytes().to_vec();
@@ -20,9 +21,6 @@ impl ChunkData {
             chunk_data,
             crc: ChunkCRC::new(&data[..]),
         })
-    }
-    pub fn get_header(&self) -> &ChunkHeader {
-        &self.header
     }
     pub fn validate_crc(&self) -> bool {
         self.crc.validate_crc(&self.get_crc_data()[..])
@@ -37,7 +35,7 @@ impl ChunkData {
         &self.chunk_data[..]
     }
     fn get_crc_data(&self) -> Vec<u8> {
-        let mut data = self.header.get_chunk_type_str().as_bytes().to_vec();
+        let mut data = self.header.get_chunk_type_as_str().as_bytes().to_vec();
         data.extend(self.chunk_data.as_slice());
 
         data
@@ -61,7 +59,7 @@ impl PNGBuilder {
     }
     pub fn with_chunk(mut self, chunk: impl Into<ChunkData>) -> Self {
         let chunk = chunk.into();
-        if chunk.header.get_chunk_type_str() == "IEND" {
+        if chunk.header.get_chunk_type_as_str() == "IEND" {
             return self;
         }
         self.chunks.push(chunk);
@@ -85,14 +83,14 @@ impl PNGBuilder {
     pub fn build(self) -> Vec<u8> {
         let mut png = PNG_SIGNATURE.to_vec();
         for section in self.chunks {
-            png.extend(section.header.get_raw_length());
+            png.extend(section.header.get_length_raw());
             png.extend(section.header.get_chunk_type());
             png.extend(section.chunk_data);
             png.extend(section.crc.get_raw_crc())
         }
 
         let end_section = ChunkData::new("IEND", Vec::new()).unwrap();
-        png.extend(end_section.header.get_raw_length());
+        png.extend(end_section.header.get_length_raw());
         png.extend(end_section.header.get_chunk_type());
         png.extend(end_section.chunk_data);
         png.extend(end_section.crc.get_raw_crc());

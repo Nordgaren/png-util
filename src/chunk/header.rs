@@ -14,7 +14,7 @@ impl Debug for ChunkHeader {
             f,
             "Chunk {{ length: {}, chunk_type: \"{}\" }}",
             self.get_length(),
-            self.get_chunk_type_str()
+            self.get_chunk_type_as_str()
         )
     }
 }
@@ -27,8 +27,16 @@ impl ChunkHeader {
         })
     }
     #[inline(always)]
+    pub fn get_pointer(&self) -> *const u8 {
+        self.length.as_ptr()
+    }
+    #[inline(always)]
     pub fn get_length(&self) -> u32 {
         u32::from_be_bytes(self.length)
+    }
+    #[inline(always)]
+    pub(crate) fn get_length_raw(&self) -> [u8; 4] {
+        self.length
     }
     pub fn set_length(&mut self, length: u32) -> bool {
         if length > 0x80000000 {
@@ -39,7 +47,7 @@ impl ChunkHeader {
         true
     }
     #[inline(always)]
-    pub fn get_chunk_type_str(&self) -> &str {
+    pub fn get_chunk_type_as_str(&self) -> &str {
         self.chunk_type.as_str()
     }
     #[inline(always)]
@@ -56,13 +64,5 @@ impl ChunkHeader {
             length: self.length,
             chunk_type: self.chunk_type.internal_clone(),
         }
-    }
-    #[inline(always)]
-    pub(crate) fn get_raw_length(&self) -> [u8; 4] {
-        self.length
-    }
-    #[inline(always)]
-    pub(crate) unsafe fn from_ptr<'a>(ptr: *const u8) -> &'a ChunkHeader {
-        unsafe { &*(ptr as *const ChunkHeader) }
     }
 }

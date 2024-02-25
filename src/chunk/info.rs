@@ -11,18 +11,22 @@ pub struct ChunkInfo<'a> {
 
 impl<'a> ChunkInfo<'a> {
     #[inline(always)]
-    pub fn get_header(&self) -> &ChunkHeader {
-        self.header
+    pub fn get_length(&self) -> u32 {
+        self.header.get_length()
+    }
+    #[inline(always)]
+    pub fn get_chunk_type_as_str(&self) -> &str {
+        self.header.get_chunk_type_as_str()
+    }
+    #[inline(always)]
+    pub fn get_crc(&self) -> u32 {
+        self.crc.get_crc()
     }
     pub fn validate_crc(&self) -> bool {
         self.crc.validate_crc(self.get_crc_data())
     }
     pub fn calculate_crc(&self) -> u32 {
         crc::crc(self.get_crc_data())
-    }
-    #[inline(always)]
-    pub fn get_crc(&self) -> u32 {
-        self.crc.get_crc()
     }
     #[inline(always)]
     pub fn get_chunk_data(&self) -> &[u8] {
@@ -37,10 +41,20 @@ impl<'a> ChunkInfo<'a> {
         self.crc.internal_clone()
     }
     #[inline(always)]
+    #[allow(unused)]
+    fn get_chunk_as_slice(&self) -> &[u8] {
+        unsafe {
+            std::slice::from_raw_parts(
+                self.header.get_pointer(),
+                self.header.get_length() as usize + std::mem::size_of::<ChunkHeader>() + std::mem::size_of::<ChunkCRC>(),
+            )
+        }
+    }
+    #[inline(always)]
     fn get_crc_data(&self) -> &[u8] {
         unsafe {
             std::slice::from_raw_parts(
-                self.header.get_chunk_type_str().as_ptr(),
+                self.header.get_chunk_type_as_str().as_ptr(),
                 self.header.get_length() as usize + 4,
             )
         }

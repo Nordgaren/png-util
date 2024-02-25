@@ -36,10 +36,6 @@ impl ChunkCRC {
     pub(crate) fn get_raw_crc(&self) -> [u8; 4] {
         self.crc
     }
-    #[inline(always)]
-    pub(crate) unsafe fn from_ptr<'a>(ptr: *const u8) -> &'a ChunkCRC {
-        unsafe { &*(ptr as *const ChunkCRC) }
-    }
 }
 pub const fn crc(buffer: &[u8]) -> u32 {
     update_crc(u32::MAX, buffer) ^ u32::MAX
