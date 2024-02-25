@@ -1,8 +1,9 @@
-use crate::chunk_header::ChunkHeader;
-use crate::chunk_crc::ChunkCRC;
-use crate::chunk_info::ChunkInfo;
+use crate::chunk::crc;
+use crate::chunk::header::ChunkHeader;
+use crate::chunk::crc::ChunkCRC;
+use crate::chunk::info::ChunkInfo;
 use crate::consts::PNG_SIGNATURE;
-use crate::{chunk_crc, PNG};
+use crate::PNG;
 
 pub struct ChunkData {
     header: ChunkHeader,
@@ -27,7 +28,7 @@ impl ChunkData {
         self.crc.validate_crc(&self.get_crc_data()[..])
     }
     pub fn calculate_crc(&self) -> u32 {
-        chunk_crc::crc(&self.get_crc_data()[..])
+        crc::crc(&self.get_crc_data()[..])
     }
     pub fn get_crc(&self) -> u32 {
         self.crc.get_crc()
@@ -36,7 +37,7 @@ impl ChunkData {
         &self.chunk_data[..]
     }
     fn get_crc_data(&self) -> Vec<u8> {
-        let mut data = self.header.get_chunk_type().as_bytes().to_vec();
+        let mut data = self.header.get_chunk_type_str().as_bytes().to_vec();
         data.extend(self.chunk_data.as_slice());
 
         data
@@ -60,7 +61,7 @@ impl PNGBuilder {
     }
     pub fn with_chunk(mut self, chunk: impl Into<ChunkData>) -> Self {
         let chunk = chunk.into();
-        if chunk.header.get_chunk_type() == "IEND" {
+        if chunk.header.get_chunk_type_str() == "IEND" {
             return self;
         }
         self.chunks.push(chunk);
@@ -85,14 +86,14 @@ impl PNGBuilder {
         let mut png = PNG_SIGNATURE.to_vec();
         for section in self.chunks {
             png.extend(section.header.get_raw_length());
-            png.extend(section.header.get_raw_type());
+            png.extend(section.header.get_chunk_type());
             png.extend(section.chunk_data);
             png.extend(section.crc.get_raw_crc())
         }
 
         let end_section = ChunkData::new("IEND", Vec::new()).unwrap();
         png.extend(end_section.header.get_raw_length());
-        png.extend(end_section.header.get_raw_type());
+        png.extend(end_section.header.get_chunk_type());
         png.extend(end_section.chunk_data);
         png.extend(end_section.crc.get_raw_crc());
 

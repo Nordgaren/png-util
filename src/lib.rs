@@ -1,13 +1,11 @@
-use crate::chunk_info::ChunkInfo;
+use chunk::info::ChunkInfo;
 use crate::consts::{PNG_SIGNATURE, PNG_SIGNATURE_LENGTH};
 use std::io::{Error, ErrorKind};
 
 mod builder;
-mod chunk_header;
-mod chunk_crc;
-mod chunk_info;
 mod consts;
 mod iter;
+mod chunk;
 
 /// A Rust type that is able to enumerate and inspect a buffer that is a valid PNG file.
 pub struct PNG<'a> {
@@ -66,7 +64,7 @@ impl PNG<'_> {
         for (i, chunk_info) in self.into_iter().enumerate() {
             if !chunk_info.validate_crc() {
                 err.push_str(&format!("CRC failed. Chunk #: {i} Chunk type: {}, Chunk length: {:X}, Chunk crc: {:X}, Calculated crc: {:X}",
-                                      chunk_info.get_header().get_chunk_type(),
+                                      chunk_info.get_header().get_chunk_type_str(),
                                       chunk_info.get_header().get_length(),
                                       chunk_info.get_crc(),
                                       chunk_info.get_crc()),
@@ -85,10 +83,10 @@ impl PNG<'_> {
         Ok(())
     }
     pub fn get_chunk_of_type(&self, chunk_type: &str) -> Option<ChunkInfo> {
-        self.into_iter().find(|i| i.get_header().get_chunk_type() == chunk_type)
+        self.into_iter().find(|i| i.get_header().get_chunk_type_str() == chunk_type)
     }
     pub fn get_chunks_of_type(&self, chunk_type: &str) -> Vec<ChunkInfo> {
-        self.into_iter().filter(|i| i.get_header().get_chunk_type() == chunk_type).collect()
+        self.into_iter().filter(|i| i.get_header().get_chunk_type_str() == chunk_type).collect()
     }
     pub fn get_chunk_info(&self) -> Vec<ChunkInfo> {
         self.into_iter().collect()

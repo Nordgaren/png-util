@@ -1,8 +1,8 @@
-use crate::chunk_header::ChunkHeader;
-use crate::chunk_crc::ChunkCRC;
-use crate::chunk_crc;
+use crate::chunk::header::ChunkHeader;
+use crate::chunk::crc::ChunkCRC;
+use crate::chunk::crc;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct ChunkInfo<'a> {
     header: &'a ChunkHeader,
     chunk_data: &'a [u8],
@@ -10,6 +10,7 @@ pub struct ChunkInfo<'a> {
 }
 
 impl<'a> ChunkInfo<'a> {
+    #[inline(always)]
     pub fn get_header(&self) -> &ChunkHeader {
         self.header
     }
@@ -17,24 +18,29 @@ impl<'a> ChunkInfo<'a> {
         self.crc.validate_crc(self.get_crc_data())
     }
     pub fn calculate_crc(&self) -> u32 {
-        chunk_crc::crc(self.get_crc_data())
+        crc::crc(self.get_crc_data())
     }
+    #[inline(always)]
     pub fn get_crc(&self) -> u32 {
         self.crc.get_crc()
     }
+    #[inline(always)]
     pub fn get_chunk_data(&self) -> &[u8] {
         self.chunk_data
     }
+    #[inline(always)]
     pub(crate) fn clone_chunk(&self) -> ChunkHeader {
         self.header.internal_clone()
     }
+    #[inline(always)]
     pub(crate) fn clone_crc(&self) -> ChunkCRC {
         self.crc.internal_clone()
     }
+    #[inline(always)]
     fn get_crc_data(&self) -> &[u8] {
         unsafe {
             std::slice::from_raw_parts(
-                self.header.get_chunk_type().as_ptr(),
+                self.header.get_chunk_type_str().as_ptr(),
                 self.header.get_length() as usize + 4,
             )
         }

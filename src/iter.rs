@@ -1,6 +1,6 @@
-use crate::chunk_header::ChunkHeader;
-use crate::chunk_crc::ChunkCRC;
-use crate::chunk_info::ChunkInfo;
+use crate::chunk::header::ChunkHeader;
+use crate::chunk::crc::ChunkCRC;
+use crate::chunk::info::ChunkInfo;
 use crate::consts::PNG_SIGNATURE_LENGTH;
 use crate::PNG;
 
@@ -41,16 +41,22 @@ impl<'a> Iterator for Iter<'a> {
             return None;
         }
 
-        let chunk_size = std::mem::size_of::<ChunkHeader>();
+        // Get a reference to the chunk header and then advance the buffer to the start of the chunk
+        // data.
+        let header_size = std::mem::size_of::<ChunkHeader>();
         let chunk = unsafe { ChunkHeader::from_ptr(self.buffer.as_ptr()) };
-        self.buffer = &self.buffer[chunk_size..];
+        self.buffer = &self.buffer[header_size..];
 
-        self.current_section = chunk.get_raw_type();
+        // Keep track of the current section so that we can check the next time we call `next()`
+        self.current_section = chunk.get_chunk_type();
 
+        // Get the length of the chunk data from the header, get a slice containing the chunk data,
+        // and then advance the buffer to the start of the crc data.
         let chunk_data_len = chunk.get_length() as usize;
         let chunk_data = &self.buffer[..chunk_data_len];
         self.buffer = &self.buffer[chunk_data_len..];
 
+        // Get a reference to the crc value and then advance the buffer to the start of the next chunk.
         let crc_size = std::mem::size_of::<ChunkCRC>();
         let crc = unsafe { ChunkCRC::from_ptr(self.buffer.as_ptr()) };
         self.buffer = &self.buffer[crc_size..];
