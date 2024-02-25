@@ -27,6 +27,7 @@ impl ChunkType {
         unsafe { std::str::from_utf8_unchecked(&self._type) }
     }
     #[inline(always)]
+    #[must_use = "Setting the chunk type can fail if the provided type is greater than 4 bytes"]
     pub fn set_chunk_type(&mut self, chunk_type: &str) -> bool {
         if self._type.len() != 4 {
             return false;

@@ -36,7 +36,7 @@ impl PNGChunk {
         if !header.set_chunk_type(chunk_type) {
             return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("Chunk type unable to be set")
+                "Chunk type unable to be set"
             ))
         }
 
@@ -51,31 +51,41 @@ impl PNGChunk {
         &self.data[..]
     }
     // Chunk Header functions
+    #[inline(always)]
     pub fn get_length(&self) -> u32 {
         self.as_chunk_header().get_length()
     }
+    #[inline(always)]
+    #[must_use = "Setting the length will fail if the `length` parameter is greater than 0x80000000"]
     pub fn set_length(&mut self, len: u32) -> bool {
         self.as_chunk_header_mut().set_length(len)
     }
+    #[inline(always)]
     pub fn get_chunk_type(&self) -> &str {
         self.as_chunk_header().get_chunk_type_as_str()
     }
+    #[inline(always)]
+    #[must_use = "Setting the chunk type can fail if the provided type is greater than 4 bytes"]
     pub fn set_chunk_type(&mut self, chunk_type: &str) -> bool {
         self.as_chunk_header_mut().set_chunk_type(chunk_type)
     }
+    #[inline(always)]
     fn as_chunk_header(&self) -> &ChunkHeader {
         unsafe { &*(self.data.as_ptr() as *const ChunkHeader) }
     }
+    #[inline(always)]
     fn as_chunk_header_mut(&mut self) -> &mut ChunkHeader {
         unsafe { &mut *(self.data.as_ptr() as *mut ChunkHeader) }
     }
     // Chunk Data
+    #[inline(always)]
     pub fn get_chunk_data(&self) -> &[u8] {
         let header = self.as_chunk_header();
         let data_start = CHUNK_HEADER_SIZE;
         let data_end = data_start + header.get_length() as usize;
         &self.data[data_start..data_end]
     }
+    #[inline(always)]
     pub fn get_chunk_data_mut(&mut self) -> &mut [u8] {
         let header = self.as_chunk_header();
         let data_start = CHUNK_HEADER_SIZE;
@@ -83,12 +93,15 @@ impl PNGChunk {
         &mut self.data[data_start..data_end]
     }
     // CRC functions
-    pub fn validate_crc(&self) -> bool {
-        self.as_chunk_crc().validate_crc(self.get_crc_data())
+    #[inline(always)]
+    pub fn is_valid_crc(&self) -> bool {
+        self.as_chunk_crc().is_valid_crc(self.get_crc_data())
     }
+    #[inline(always)]
     pub fn calculate_crc(&self) -> u32 {
         crc::crc(self.get_crc_data())
     }
+    #[inline(always)]
     pub fn get_crc(&self) -> u32 {
         self.as_chunk_crc().get_crc()
     }

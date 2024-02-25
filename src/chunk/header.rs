@@ -34,6 +34,7 @@ impl ChunkHeader {
     pub fn get_length(&self) -> u32 {
         u32::from_be_bytes(self.length)
     }
+    #[must_use = "Setting the length will fail if the `length` parameter is greater than 0x80000000"]
     pub fn set_length(&mut self, length: u32) -> bool {
         if length > 0x80000000 {
             return false;
@@ -51,6 +52,7 @@ impl ChunkHeader {
         self.chunk_type.get_chunk_type()
     }
     #[inline(always)]
+    #[must_use = "Setting the chunk type can fail if the provided type is greater than 4 bytes"]
     pub fn set_chunk_type(&mut self, chunk_type: &str) -> bool {
         self.chunk_type.set_chunk_type(chunk_type)
     }

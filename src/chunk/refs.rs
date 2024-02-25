@@ -27,7 +27,7 @@ impl<'a> ChunkRefs<'a> {
     }
     #[inline(always)]
     pub fn validate_crc(&self) -> bool {
-        self.crc.validate_crc(self.get_crc_data())
+        self.crc.is_valid_crc(self.get_crc_data())
     }
     #[inline(always)]
     pub fn calculate_crc(&self) -> u32 {

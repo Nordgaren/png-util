@@ -19,7 +19,7 @@ impl ChunkCRC {
             crc: crc(data).to_be_bytes(),
         }
     }
-    pub fn validate_crc(&self, data: &[u8]) -> bool {
+    pub fn is_valid_crc(&self, data: &[u8]) -> bool {
         crc(data) == self.get_crc()
     }
     #[inline(always)]
