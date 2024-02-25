@@ -6,17 +6,17 @@ use crate::chunk::ty::ChunkType;
 use crate::consts::{CHUNK_CRC_SIZE, CHUNK_HEADER_SIZE, PNG_SIGNATURE};
 use crate::PNGReader;
 
-pub struct NewChunk {
+pub struct PNGChunk {
     data: Vec<u8>,
 }
 
 #[allow(unused)]
-impl NewChunk {
-    pub fn new(chunk_type: &str, mut chunk_data: &[u8]) -> std::io::Result<NewChunk> {
+impl PNGChunk {
+    pub fn new(chunk_type: &str, mut chunk_data: &[u8]) -> std::io::Result<PNGChunk> {
         let mut data = vec![0; CHUNK_HEADER_SIZE];
         data.extend(chunk_data);
 
-        let mut chunk = NewChunk { data };
+        let mut chunk = PNGChunk { data };
 
         let mut header = chunk.as_chunk_header_mut();
         header.set_length(chunk_data.len() as u32);
@@ -100,9 +100,9 @@ impl NewChunk {
     }
 }
 
-impl From<ChunkInfo<'_>> for NewChunk {
+impl From<ChunkInfo<'_>> for PNGChunk {
     fn from(chunk_info: ChunkInfo) -> Self {
-        NewChunk::new(
+        PNGChunk::new(
             chunk_info.get_chunk_type(),
             chunk_info.get_chunk_data(),
         )
@@ -111,14 +111,14 @@ impl From<ChunkInfo<'_>> for NewChunk {
 }
 
 pub struct PNGBuilder {
-    chunks: Vec<NewChunk>,
+    chunks: Vec<PNGChunk>,
 }
 
 impl PNGBuilder {
     pub fn new() -> Self {
         PNGBuilder { chunks: vec![] }
     }
-    pub fn with_chunk(mut self, chunk: impl Into<NewChunk>) -> Self {
+    pub fn with_chunk(mut self, chunk: impl Into<PNGChunk>) -> Self {
         let chunk = chunk.into();
         if chunk.as_chunk_header().get_chunk_type_as_str() == "IEND" {
             return self;
@@ -134,7 +134,7 @@ impl PNGBuilder {
 
         self
     }
-    pub fn with_chunks(mut self, chunks: Vec<impl Into<NewChunk>>) -> Self {
+    pub fn with_chunks(mut self, chunks: Vec<impl Into<PNGChunk>>) -> Self {
         for chunk in chunks {
             self = self.with_chunk(chunk)
         }
@@ -147,7 +147,7 @@ impl PNGBuilder {
             png.extend(chunk.as_slice());
         }
 
-        let end_section = NewChunk::new("IEND", &[]).unwrap();
+        let end_section = PNGChunk::new("IEND", &[]).unwrap();
         png.extend(end_section.as_slice());
 
         png
