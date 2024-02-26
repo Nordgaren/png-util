@@ -29,54 +29,41 @@ use std::io::{Error, ErrorKind};
 /// comparison; it is incorrect to perform case conversion on type codes.
 #[repr(C)]
 pub struct ChunkType {
+    /// A 4-byte chunk type code. For convenience in description and in examining PNG files, type codes
+    /// are restricted to consist of uppercase and lowercase ASCII letters (A-Z and a-z, or 65-90 and 97-122
+    /// decimal).
     _type: [u8; 4],
 }
 
 const _: () = assert!(std::mem::size_of::<ChunkType>() == std::mem::size_of::<u32>());
 
 impl ChunkType {
-    pub fn new(chunk_type_str: &str) -> std::io::Result<Self> {
-        let mut chunk = ChunkType { _type: [0; 4] };
-        chunk.set_chunk_type(chunk_type_str)?;
-
-        Ok(chunk)
-    }
+    /// A 4-byte chunk type code. For convenience in description and in examining PNG files, type codes
+    /// are restricted to consist of uppercase and lowercase ASCII letters (A-Z and a-z, or 65-90 and 97-122
+    /// decimal).
     #[inline(always)]
     pub fn get_chunk_type(&self) -> [u8; 4] {
         self._type
     }
+    /// A 4-byte chunk type code. For convenience in description and in examining PNG files, type codes
+    /// are restricted to consist of uppercase and lowercase ASCII letters (A-Z and a-z, or 65-90 and 97-122
+    /// decimal).
     #[inline(always)]
     pub fn as_str(&self) -> &str {
         unsafe { std::str::from_utf8_unchecked(&self._type) }
     }
+    /// A 4-byte chunk type code. For convenience in description and in examining PNG files, type codes
+    /// are restricted to consist of uppercase and lowercase ASCII letters (A-Z and a-z, or 65-90 and 97-122
+    /// decimal).
     #[inline(always)]
     pub fn set_chunk_type(&mut self, chunk_type: &str) -> std::io::Result<()> {
-        ChunkType::validate_chunk_type(chunk_type)?;
+        Self::validate_chunk_type(chunk_type)?;
 
         self._type.copy_from_slice(chunk_type.as_bytes());
         Ok(())
     }
     pub fn validate(&self) -> std::io::Result<()> {
-        ChunkType::validate_chunk_type(self.as_str())
-    }
-    pub fn validate_chunk_type(chunk_type: &str) -> std::io::Result<()> {
-        if chunk_type.len() != 4 {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "Chunk type is not 4 bytes long. Invalid Chunk type.",
-            ));
-        }
-
-        for chr in chunk_type.as_bytes() {
-            if !chr.is_ascii_alphabetic() {
-                return Err(Error::new(
-                    ErrorKind::InvalidData,
-                    format!("Chunk type contains invalid character. {}", chr),
-                ));
-            }
-        }
-
-        Ok(())
+        Self::validate_chunk_type(self.as_str())
     }
     /// Chunks that are not strictly necessary in order to meaningfully display the contents of the file
     /// are known as "ancillary" chunks. A decoder encountering an unknown chunk in which the ancillary
@@ -132,5 +119,33 @@ impl ChunkType {
     // The safe-to-copy bit will always be 0 for critical chunks.
     pub fn is_safe_to_copy(&self) -> bool {
         self._type[3] & BIT_FIVE_MASK != 0
+    }
+}
+// Associated functions
+impl ChunkType {
+    pub fn new(chunk_type_str: &str) -> std::io::Result<Self> {
+        let mut chunk = ChunkType { _type: [0; 4] };
+        chunk.set_chunk_type(chunk_type_str)?;
+
+        Ok(chunk)
+    }
+    pub fn validate_chunk_type(chunk_type: &str) -> std::io::Result<()> {
+        if chunk_type.len() != 4 {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "Chunk type is not 4 bytes long. Invalid Chunk type.",
+            ));
+        }
+
+        for chr in chunk_type.as_bytes() {
+            if !chr.is_ascii_alphabetic() {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!("Chunk type contains invalid character. {}", chr),
+                ));
+            }
+        }
+
+        Ok(())
     }
 }
