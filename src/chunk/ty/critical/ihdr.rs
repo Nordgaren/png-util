@@ -20,17 +20,6 @@ const IHDR_SIZE: usize = 13;
 const _: () = assert!(std::mem::size_of::<IHDR>() == IHDR_SIZE);
 
 impl IHDR {
-    pub fn new(width: i32, height: i32, details: IHDRDetails) -> std::io::Result<Self> {
-        let header = IHDR {
-            width: width.to_be_bytes(),
-            height: height.to_be_bytes(),
-            details,
-        };
-
-        header.validate_dimensions()?;
-
-        Ok(header)
-    }
     /// Checks that the dimensions of the IHDR are correct
     pub fn validate_dimensions(&self) -> std::io::Result<()> {
         let width = self.get_width();
@@ -53,16 +42,6 @@ impl IHDR {
         }
 
         Ok(())
-    }
-    pub fn from_chunk_refs(chunk_refs: ChunkRefs) -> Option<&IHDR> {
-        if chunk_refs.get_chunk_type() != "IHDR" {
-            return None;
-        }
-        if chunk_refs.get_chunk_data().len() != std::mem::size_of::<IHDR>() {
-            return None;
-        }
-
-        Some(unsafe { &*(chunk_refs.get_chunk_data().as_ptr() as *const IHDR) })
     }
     pub fn validate(&self) -> std::io::Result<()> {
         self.validate_dimensions()?;
@@ -89,6 +68,31 @@ impl IHDR {
         }
         self.height = height.to_be_bytes();
         true
+    }
+}
+
+// Associated functions
+impl IHDR {
+    pub fn new(width: i32, height: i32, details: IHDRDetails) -> std::io::Result<Self> {
+        let header = IHDR {
+            width: width.to_be_bytes(),
+            height: height.to_be_bytes(),
+            details,
+        };
+
+        header.validate_dimensions()?;
+
+        Ok(header)
+    }
+    pub fn from_chunk_refs(chunk_refs: ChunkRefs) -> Option<&IHDR> {
+        if chunk_refs.get_chunk_type() != "IHDR" {
+            return None;
+        }
+        if chunk_refs.get_chunk_data().len() != std::mem::size_of::<IHDR>() {
+            return None;
+        }
+
+        Some(unsafe { &*(chunk_refs.get_chunk_data().as_ptr() as *const IHDR) })
     }
     fn is_valid_dimension(dimension: i32) -> bool {
         dimension > 0
@@ -158,6 +162,103 @@ const COLOR_TYPE_LOOKUP_TABLE: [&[u8]; 7] = [
 ];
 
 impl IHDRDetails {
+    /// Checks that the bit depth is valid for the color type option, and checks that the interlace method
+    /// is a valid value.
+    pub fn validate(&self) -> std::io::Result<()> {
+        Self::is_valid_bit_depth(self.bit_depth)?;
+
+        Self::is_valid_color_type_for_bit_depth(self.color_type, self.bit_depth)?;
+
+        if self.compression_method != 0 {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                format!("Invalid compression method. Must be 0. compression method: {}",
+                        self.compression_method,
+                ),
+            ));
+        }
+
+        if self.filter_method != 0 {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                format!("Invalid filter method. Must be 0. filter method: {}",
+                        self.filter_method,
+                ),
+            ));
+        }
+
+        Self::is_valid_interlace_method(self.interlace_method)?;
+
+        Ok(())
+    }
+    #[inline(always)]
+    pub fn get_bit_depth(&self) -> u8 {
+        self.bit_depth
+    }
+    pub fn set_bit_depth(&mut self, bit_depth: u8) -> std::io::Result<()> {
+        Self::is_valid_bit_depth(bit_depth)?;
+        Self::is_valid_color_type_for_bit_depth(self.color_type, bit_depth)?;
+
+        self.bit_depth = bit_depth;
+        Ok(())
+    }
+    #[inline(always)]
+    pub fn get_color_type(&self) -> u8 {
+        self.color_type
+    }
+    pub fn set_color_type(&mut self, color_type: u8) -> std::io::Result<()> {
+        Self::is_valid_color_type_for_bit_depth(color_type, self.bit_depth)?;
+
+        self.color_type = color_type;
+        Ok(())
+    }
+    pub fn set_bit_depth_and_color_type(&mut self, color_type: u8, bit_depth: u8) -> std::io::Result<()> {
+        Self::is_valid_bit_depth(bit_depth)?;
+        Self::is_valid_color_type_for_bit_depth(color_type, bit_depth)?;
+
+        self.color_type = color_type;
+        self.bit_depth = bit_depth;
+
+        Ok(())
+    }
+    #[inline(always)]
+    pub fn get_compression_method(&self) -> u8 {
+        self.compression_method
+    }
+    #[must_use = "Setting will fail if compression method is not set to 0"]
+    pub fn set_compression_method(&mut self, compression_method: u8) -> bool {
+        if compression_method != 0 {
+            return false;
+        }
+        self.compression_method = compression_method;
+        true
+    }
+    #[inline(always)]
+    pub fn get_filter_method(&self) -> u8 {
+        self.filter_method
+    }
+    #[must_use = "Setting will fail if filter method is not set to 0"]
+    pub fn set_filter_method(&mut self, filter_method: u8) -> bool {
+        if filter_method != 0 {
+            return false;
+        }
+        self.filter_method = filter_method;
+        true
+    }
+    #[inline(always)]
+    pub fn get_interlace_method(&self) -> u8 {
+        self.interlace_method
+    }
+    pub fn set_interlace_method(&mut self, interlace_method: u8) -> std::io::Result<()>  {
+        Self::is_valid_interlace_method(interlace_method)?;
+
+        self.interlace_method = interlace_method;
+        Ok(())
+    }
+}
+
+// Associated functions
+impl IHDRDetails {
     pub fn new(
         bit_depth: u8,
         color_type: u8,
@@ -197,161 +298,48 @@ impl IHDRDetails {
             interlace_method,
         }
     }
-    /// Checks that the bit depth is valid for the color type option, and checks that the interlace method
-    /// is a valid value.
-    pub fn validate(&self) -> std::io::Result<()> {
-        if !Self::is_valid_bit_depth(self.bit_depth) {
+    fn is_valid_bit_depth(bit_depth: u8) -> std::io::Result<()> {
+        if !VALID_BIT_DEPTHS.contains(&bit_depth) {
             return Err(Error::new(
                 ErrorKind::InvalidData,
                 format!("Invalid bit depth: {}\n\
                 Valid values: {:?}",
-                        self.bit_depth,
+                        bit_depth,
                         VALID_BIT_DEPTHS,
                 ),
             ));
         }
 
-        if !Self::is_valid_color_type_for_bit_depth(self.color_type, self.bit_depth) {
+        Ok(())
+    }
+    fn is_valid_color_type_for_bit_depth(color_type: u8, bit_depth: u8) -> std::io::Result<()> {
+        let table = COLOR_TYPE_LOOKUP_TABLE[color_type as usize];
+        if !table.contains(&bit_depth) {
             return Err(Error::new(
                 ErrorKind::InvalidData,
                 format!("Invalid bit depth for color type.\n\
                 color type: {}\n\
                 bit_depth: {}\n\
                 valid values: {:?}",
-                        self.color_type,
-                        self.bit_depth,
-                        VALID_BIT_DEPTHS[self.color_type as usize],
+                        color_type,
+                        bit_depth,
+                        VALID_BIT_DEPTHS[color_type as usize],
                 ),
             ));
         }
 
-        if self.compression_method != 0 {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                format!("Invalid compression method. Must be 0. compression method: {}",
-                        self.compression_method,
-                ),
-            ));
-        }
-
-        if self.filter_method != 0 {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                format!("Invalid filter method. Must be 0. filter method: {}",
-                        self.filter_method,
-                ),
-            ));
-        }
-
-        if !Self::is_valid_interlace_method(self.interlace_method) {
+        Ok(())
+    }
+    fn is_valid_interlace_method(interlace_method: u8) -> std::io::Result<()> {
+        if interlace_method != 1 && interlace_method != 0 {
             return Err(Error::new(
                 ErrorKind::InvalidData,
                 format!("Invalid interlace method. Must be 1 or 0. interlace method: {}",
-                        self.interlace_method,
+                        interlace_method,
                 ),
             ));
         }
-
         Ok(())
-    }
-    #[inline(always)]
-    pub fn get_bit_depth(&self) -> u8 {
-        self.bit_depth
-    }
-    pub fn set_bit_depth(&mut self, bit_depth: u8) -> std::io::Result<()> {
-        if !Self::is_valid_bit_depth(bit_depth) {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                format!("Invalid bit depth: {}\n\
-                Valid values: {:?}",
-                        bit_depth,
-                        VALID_BIT_DEPTHS,
-                ),
-            ));
-        }
-
-        if !Self::is_valid_color_type_for_bit_depth(self.color_type, bit_depth) {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                format!("Invalid bit depth for color type.\n\
-                color type: {}\n\
-                bit_depth: {}\n\
-                valid values: {:?}",
-                        self.color_type,
-                        bit_depth,
-                        VALID_BIT_DEPTHS[self.color_type as usize],
-                ),
-            ));
-        }
-        self.bit_depth = bit_depth;
-        Ok(())
-    }
-    #[inline(always)]
-    pub fn get_color_type(&self) -> u8 {
-        self.color_type
-    }
-    #[must_use = "Setting the length will fail if the color type and bit depth combination don't match"]
-    pub fn set_color_type(&mut self, color_type: u8) -> bool {
-        if !Self::is_valid_color_type_for_bit_depth(color_type, self.bit_depth) {
-            return false;
-        }
-        self.color_type = color_type;
-        true
-    }
-    #[must_use = "Setting the length will fail if the color type and bit depth combination don't match"]
-    pub fn set_bit_depth_and_color_type(&mut self, color_type: u8, bit_depth: u8) -> bool {
-        if !Self::is_valid_color_type_for_bit_depth(color_type, bit_depth) {
-            return false;
-        }
-        self.bit_depth = bit_depth;
-        self.color_type = color_type;
-        true
-    }
-    fn is_valid_bit_depth(bit_depth: u8) -> bool {
-        VALID_BIT_DEPTHS.contains(&bit_depth)
-    }
-    fn is_valid_color_type_for_bit_depth(color_type: u8, bit_depth: u8) -> bool {
-        let table = COLOR_TYPE_LOOKUP_TABLE[color_type as usize];
-        table.contains(&bit_depth)
-    }
-    #[inline(always)]
-    pub fn get_compression_method(&self) -> u8 {
-        self.compression_method
-    }
-    #[must_use = "Setting will fail if compression method is not set to 0"]
-    pub fn set_compression_method(&mut self, compression_method: u8) -> bool {
-        if compression_method != 0 {
-            return false;
-        }
-        self.compression_method = compression_method;
-        true
-    }
-    #[inline(always)]
-    pub fn get_filter_method(&self) -> u8 {
-        self.filter_method
-    }
-    #[must_use = "Setting will fail if filter method is not set to 0"]
-    pub fn set_filter_method(&mut self, filter_method: u8) -> bool {
-        if filter_method != 0 {
-            return false;
-        }
-        self.filter_method = filter_method;
-        true
-    }
-    #[inline(always)]
-    pub fn get_interlace_method(&self) -> u8 {
-        self.interlace_method
-    }
-    #[must_use = "Setting will fail if interlace method is not set to 1 or 0"]
-    pub fn set_interlace_method(&mut self, interlace_method: u8) -> bool {
-        if !Self::is_valid_interlace_method(interlace_method) {
-            return false;
-        }
-        self.interlace_method = interlace_method;
-        true
-    }
-    fn is_valid_interlace_method(interlace_method: u8) -> bool {
-        interlace_method == 1 || interlace_method == 0
     }
 }
 
