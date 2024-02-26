@@ -44,6 +44,7 @@ impl<'a> Iterator for Iter<'a> {
 
         // Get a reference to the chunk header and then advance the buffer to the start of the chunk
         let chunk = self.buffer.read_t::<ChunkHeader>().ok()?;
+        chunk.validate_chunk_type().ok()?;
 
         // Keep track of the current section so that we can check the next time we call `next()`
         self.current_section = chunk.get_chunk_type();

@@ -51,9 +51,11 @@ impl ChunkHeader {
     pub fn get_chunk_type(&self) -> [u8; 4] {
         self.chunk_type.get_chunk_type()
     }
+    pub fn validate_chunk_type(&self) -> std::io::Result<()> {
+        self.chunk_type.validate()
+    }
     #[inline(always)]
-    #[must_use = "Setting the chunk type can fail if the provided type is greater than 4 bytes"]
-    pub fn set_chunk_type(&mut self, chunk_type: &str) -> bool {
+    pub fn set_chunk_type(&mut self, chunk_type: &str) -> std::io::Result<()> {
         self.chunk_type.set_chunk_type(chunk_type)
     }
 }

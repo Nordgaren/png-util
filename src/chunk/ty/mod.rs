@@ -1,28 +1,43 @@
+#![allow(unused)]
 mod consts;
+mod critical;
 
-use std::io::{Error, ErrorKind};
 use crate::chunk::ty::consts::BIT_FIVE_MASK;
+use std::io::{Error, ErrorKind};
 
 /// A 4-byte chunk type code. For convenience in description and in examining PNG files, type codes
 /// are restricted to consist of uppercase and lowercase ASCII letters (A-Z and a-z, or 65-90 and 97-122
 /// decimal). However, encoders and decoders must treat the codes as fixed binary values, not character
 /// strings. For example, it would not be correct to represent the type code IDAT by the EBCDIC equivalents
 /// of those letters.
+///
+/// Chunk type codes are assigned so that a decoder can determine some properties of a chunk even when
+/// it does not recognize the type code. These rules are intended to allow safe, flexible extension
+/// of the PNG format, by allowing a decoder to decide what to do when it encounters an unknown chunk.
+/// The naming rules are not normally of interest when the decoder does recognize the chunk's type.
+///
+/// Four bits of the type code, namely bit 5 (value 32) of each byte, are used to convey chunk properties.
+/// This choice means that a human can read off the assigned properties according to whether each letter
+/// of the type code is uppercase (bit 5 is 0) or lowercase (bit 5 is 1). However, decoders should test
+/// the properties of an unknown chunk by numerically testing the specified bits; testing whether a
+/// character is uppercase or lowercase is inefficient, and even incorrect if a locale-specific case
+/// definition is used.
+///
+/// It is worth noting that the property bits are an inherent part of the chunk name, and hence are
+/// fixed for any chunk type. Thus, BLOB and bLOb would be unrelated chunk type codes, not the same
+/// chunk with different properties. Decoders must recognize type codes by a simple four-byte literal
+/// comparison; it is incorrect to perform case conversion on type codes.
 #[repr(C)]
 pub struct ChunkType {
     _type: [u8; 4],
 }
+
 const _: () = assert!(std::mem::size_of::<ChunkType>() == std::mem::size_of::<u32>());
 
 impl ChunkType {
     pub fn new(chunk_type_str: &str) -> std::io::Result<Self> {
         let mut chunk = ChunkType { _type: [0; 4] };
-        if !chunk.set_chunk_type(chunk_type_str) {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "Chunk type is not 4 bytes long. Invalid Chunk type.",
-            ));
-        }
+        chunk.set_chunk_type(chunk_type_str)?;
 
         Ok(chunk)
     }
@@ -35,13 +50,33 @@ impl ChunkType {
         unsafe { std::str::from_utf8_unchecked(&self._type) }
     }
     #[inline(always)]
-    #[must_use = "Setting the chunk type can fail if the provided type is greater than 4 bytes"]
-    pub fn set_chunk_type(&mut self, chunk_type: &str) -> bool {
-        if chunk_type.len() != 4 {
-            return false;
-        }
+    pub fn set_chunk_type(&mut self, chunk_type: &str) -> std::io::Result<()> {
+        ChunkType::validate_chunk_type(chunk_type)?;
+
         self._type.copy_from_slice(chunk_type.as_bytes());
-        true
+        Ok(())
+    }
+    pub fn validate(&self) -> std::io::Result<()> {
+        ChunkType::validate_chunk_type(self.as_str())
+    }
+    pub fn validate_chunk_type(chunk_type: &str) -> std::io::Result<()> {
+        if chunk_type.len() != 4 {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "Chunk type is not 4 bytes long. Invalid Chunk type.",
+            ));
+        }
+
+        for chr in chunk_type.as_bytes() {
+            if !chr.is_ascii_alphabetic() {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    format!("Chunk type contains invalid character. {}", chr),
+                ));
+            }
+        }
+
+        Ok(())
     }
     /// Chunks that are not strictly necessary in order to meaningfully display the contents of the file
     /// are known as "ancillary" chunks. A decoder encountering an unknown chunk in which the ancillary

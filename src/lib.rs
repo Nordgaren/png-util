@@ -117,7 +117,10 @@ mod tests {
         let png_file = std::fs::read("ferris.png").expect("Could not read png file");
         let png = PNGReader::new(&png_file[..]).expect("Could not validate PNG.");
 
-        let new_png_file = PNGBuilder::new().with_png(&png).build().expect("Could not build PNG file");
+        let new_png_file = PNGBuilder::new()
+            .with_png(&png)
+            .build()
+            .expect("Could not build PNG file");
 
         std::fs::write("ferris2.png", new_png_file).unwrap()
     }
@@ -153,7 +156,6 @@ mod tests {
 
         assert!(new_png.get_chunk_of_type("teST").is_some())
     }
-
 
     #[test]
     fn chunk_info_test() {

@@ -1,7 +1,9 @@
-use std::io::{Error, ErrorKind};
+#![allow(unused)]
+
 use crate::chunk::PNGChunk;
 use crate::consts::PNG_SIGNATURE;
 use crate::PNGReader;
+use std::io::{Error, ErrorKind};
 
 pub struct PNGBuilder {
     chunks: Vec<PNGChunk>,
@@ -40,8 +42,8 @@ impl PNGBuilder {
         if chunk.get_chunk_type() != "IHDR" {
             return Err(Error::new(
                 ErrorKind::InvalidData,
-                "Valid IHDR chunk not provided"
-            ))
+                "Valid IHDR chunk not provided",
+            ));
         }
 
         for chunk in self.chunks {

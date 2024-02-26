@@ -1,9 +1,9 @@
-use std::io::{Error, ErrorKind};
 use crate::chunk::crc::ChunkCRC;
 use crate::chunk::header::ChunkHeader;
 use crate::chunk::refs::ChunkRefs;
 use crate::chunk::ty::ChunkType;
 use crate::consts::{CHUNK_CRC_SIZE, CHUNK_HEADER_SIZE};
+use std::io::{Error, ErrorKind};
 
 pub mod crc;
 pub mod header;
@@ -29,16 +29,14 @@ impl PNGChunk {
         if !header.set_length(chunk_data.len() as u32) {
             return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("Chunk data is too long.\nMax: 0x80000000\nLen: 0x{:08X}", chunk_data.len())
-            ))
+                format!(
+                    "Chunk data is too long.\nMax: 0x80000000\nLen: 0x{:08X}",
+                    chunk_data.len()
+                ),
+            ));
         };
-        // #TODO: Add reasons chunk type could not be set.
-        if !header.set_chunk_type(chunk_type) {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "Chunk type unable to be set"
-            ))
-        }
+
+        header.set_chunk_type(chunk_type)?;
 
         chunk.calculate_and_set_crc();
 
@@ -65,8 +63,7 @@ impl PNGChunk {
         self.as_chunk_header().get_chunk_type_as_str()
     }
     #[inline(always)]
-    #[must_use = "Setting the chunk type can fail if the provided type is greater than 4 bytes"]
-    pub fn set_chunk_type(&mut self, chunk_type: &str) -> bool {
+    pub fn set_chunk_type(&mut self, chunk_type: &str) -> std::io::Result<()> {
         self.as_chunk_header_mut().set_chunk_type(chunk_type)
     }
     #[inline(always)]
@@ -141,6 +138,10 @@ impl From<ChunkRefs<'_>> for PNGChunk {
 
 impl<'a> From<&'a PNGChunk> for ChunkRefs<'a> {
     fn from(chunk: &'a PNGChunk) -> ChunkRefs<'a> {
-        ChunkRefs::new(chunk.as_chunk_header(), chunk.get_chunk_data(), chunk.as_chunk_crc())
+        ChunkRefs::new(
+            chunk.as_chunk_header(),
+            chunk.get_chunk_data(),
+            chunk.as_chunk_crc(),
+        )
     }
 }
