@@ -6,10 +6,10 @@ use crate::chunk::refs::ChunkRefs;
 #[repr(C)]
 #[allow(clippy::upper_case_acronyms)]
 pub struct IHDR {
-    /// Width. 4-byte integers. Zero is an invalid value. The maximum value is 2^31 in order to accommodate
+    /// Width. 4-byte integer. Zero is an invalid value. The maximum value is 2^31 in order to accommodate
     /// languages that have difficulty with unsigned 4-byte values.
     width: [u8; 4],
-    /// Height. 4-byte integers. Zero is an invalid value. The maximum value is 2^31 in order to accommodate
+    /// Height. 4-byte integer. Zero is an invalid value. The maximum value is 2^31 in order to accommodate
     /// languages that have difficulty with unsigned 4-byte values.
     height: [u8; 4],
     /// Details about image bit depth, color type, compression method, filter method, and interlace method
@@ -99,7 +99,7 @@ impl IHDR {
     }
 }
 
-/// Details about image bit depth, color type, compression method, filter method, and interlace method
+/// bit depth, color type, compression method, filter method, and interlace method
 #[repr(C)]
 pub struct IHDRDetails {
     /// Bit depth is a single-byte integer giving the number of bits per sample or per palette index
@@ -167,7 +167,7 @@ impl IHDRDetails {
     pub fn validate(&self) -> std::io::Result<()> {
         Self::is_valid_bit_depth(self.bit_depth)?;
 
-        Self::is_valid_color_type_for_bit_depth(self.color_type, self.bit_depth)?;
+        Self::is_valid_bit_depth_for_color_type(self.color_type, self.bit_depth)?;
 
         if self.compression_method != 0 {
             return Err(Error::new(
@@ -197,7 +197,7 @@ impl IHDRDetails {
     }
     pub fn set_bit_depth(&mut self, bit_depth: u8) -> std::io::Result<()> {
         Self::is_valid_bit_depth(bit_depth)?;
-        Self::is_valid_color_type_for_bit_depth(self.color_type, bit_depth)?;
+        Self::is_valid_bit_depth_for_color_type(self.color_type, bit_depth)?;
 
         self.bit_depth = bit_depth;
         Ok(())
@@ -207,14 +207,14 @@ impl IHDRDetails {
         self.color_type
     }
     pub fn set_color_type(&mut self, color_type: u8) -> std::io::Result<()> {
-        Self::is_valid_color_type_for_bit_depth(color_type, self.bit_depth)?;
+        Self::is_valid_bit_depth_for_color_type(color_type, self.bit_depth)?;
 
         self.color_type = color_type;
         Ok(())
     }
     pub fn set_bit_depth_and_color_type(&mut self, color_type: u8, bit_depth: u8) -> std::io::Result<()> {
         Self::is_valid_bit_depth(bit_depth)?;
-        Self::is_valid_color_type_for_bit_depth(color_type, bit_depth)?;
+        Self::is_valid_bit_depth_for_color_type(color_type, bit_depth)?;
 
         self.color_type = color_type;
         self.bit_depth = bit_depth;
@@ -312,7 +312,7 @@ impl IHDRDetails {
 
         Ok(())
     }
-    fn is_valid_color_type_for_bit_depth(color_type: u8, bit_depth: u8) -> std::io::Result<()> {
+    fn is_valid_bit_depth_for_color_type(color_type: u8, bit_depth: u8) -> std::io::Result<()> {
         let table = COLOR_TYPE_LOOKUP_TABLE[color_type as usize];
         if !table.contains(&bit_depth) {
             return Err(Error::new(
