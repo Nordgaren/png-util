@@ -13,10 +13,10 @@ impl PNGBuilder {
     }
     pub fn with_chunk(mut self, chunk: impl Into<PNGChunk>) -> Self {
         let chunk = chunk.into();
-        if chunk.get_chunk_type() == "IEND" {
-            return self;
+        // Skip over any chunks of type "IEND" when adding new chunks to the builder
+        if chunk.get_chunk_type() != "IEND" {
+            self.chunks.push(chunk);
         }
-        self.chunks.push(chunk);
 
         self
     }

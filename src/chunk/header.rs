@@ -12,7 +12,7 @@ impl Debug for ChunkHeader {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Chunk {{ length: {}, chunk_type: \"{}\" }}",
+            "ChunkHeader {{ length: {}, chunk_type: \"{}\" }}",
             self.get_length(),
             self.get_chunk_type_as_str()
         )
