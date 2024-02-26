@@ -130,7 +130,8 @@ pub struct IHDRDetails {
     ///    6       8,16        Each pixel is an R,G,B triple,
     ///                        followed by an alpha sample.
     ///
-    /// The sample depth is the same as the bit depth except in the case of color type 3, in which the sample depth is always 8 bits.
+    /// The sample depth is the same as the bit depth except in the case of color type 3, in which the
+    /// sample depth is always 8 bits.
     color_type: u8,
     /// Compression method is a single-byte integer that indicates the method used to compress the image
     /// data. At present, only compression method 0 (deflate/inflate compression with a sliding window
@@ -193,6 +194,17 @@ impl IHDRDetails {
     }
     #[inline(always)]
     pub fn get_bit_depth(&self) -> u8 {
+        self.bit_depth
+    }
+    /// Gets the images sample depth.
+    /// The sample depth is the same as the bit depth except in the case of color type 3, in which the
+    /// sample depth is always 8 bits.
+    #[inline(always)]
+    pub fn get_sample_depth(&self) -> u8 {
+        if self.color_type == 3 {
+            return 8;
+        }
+
         self.bit_depth
     }
     pub fn set_bit_depth(&mut self, bit_depth: u8) -> std::io::Result<()> {
