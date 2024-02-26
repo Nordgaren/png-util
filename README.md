@@ -13,7 +13,7 @@ fn read_png() {
     let png = PNGReader::new(&png_file[..]).expect("Could not validate PNG.");
 
     for chunk in png {
-        println!("{:?}",chunk)
+        println!("{:?}", chunk)
     }
 }
 ```
