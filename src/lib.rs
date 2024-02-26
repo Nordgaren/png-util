@@ -19,7 +19,7 @@ impl<'a> PNGReader<'a> {
     pub fn new(buffer: &'a [u8]) -> std::io::Result<Self> {
         let png = PNGReader { buffer };
 
-        png.validate_png()?;
+        png.validate_header()?;
         png.validate_chunks()?;
 
         Ok(png)
@@ -39,7 +39,7 @@ impl<'a> PNGReader<'a> {
 impl PNGReader<'_> {
     /// Checks that the provided buffer has a valid PNG signature. Returns an error if the buffer is
     /// not long enough or the magic bytes at the start of the file are not the correct PNG signature.
-    pub fn validate_png(&self) -> std::io::Result<()> {
+    pub fn validate_header(&self) -> std::io::Result<()> {
         if self.buffer.len() < PNG_SIGNATURE_LENGTH {
             return Err(Error::new(
                 ErrorKind::InvalidData,
