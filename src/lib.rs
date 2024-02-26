@@ -122,11 +122,11 @@ mod tests {
             .build()
             .expect("Could not build PNG file");
 
-        std::fs::write("ferris2.png", new_png_file).unwrap()
+        let _ = PNGReader::new(&new_png_file[..]).expect("Could not validate PNG.");
     }
 
     #[test]
-    fn new_png_section() {
+    fn new_png_from_reader() {
         let png_file = std::fs::read("ferris.png").expect("Could not read png file");
         let png = PNGReader::new(&png_file[..]).expect("Could not validate PNG.");
 
