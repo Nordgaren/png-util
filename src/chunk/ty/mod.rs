@@ -37,7 +37,7 @@ impl ChunkType {
     #[inline(always)]
     #[must_use = "Setting the chunk type can fail if the provided type is greater than 4 bytes"]
     pub fn set_chunk_type(&mut self, chunk_type: &str) -> bool {
-        if self._type.len() != 4 {
+        if chunk_type.len() != 4 {
             return false;
         }
         self._type.copy_from_slice(chunk_type.as_bytes());
