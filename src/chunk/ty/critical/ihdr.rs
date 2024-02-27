@@ -43,14 +43,17 @@ impl IHDR {
 
         Ok(())
     }
+    /// Validates both the dimensions and the details structure.
     pub fn validate(&self) -> std::io::Result<()> {
         self.validate_dimensions()?;
         self.details.validate()
     }
+    /// Gets the width field value
     #[inline(always)]
     pub fn get_width(&self) -> i32 {
         i32::from_be_bytes(self.width)
     }
+    /// Sets the width field value. This value must be greater than 0.
     pub fn set_width(&mut self, width: i32) -> bool {
         if !Self::is_valid_dimension(width) {
             return false;
@@ -58,10 +61,12 @@ impl IHDR {
         self.width = width.to_be_bytes();
         true
     }
+    /// Gets the height field value
     #[inline(always)]
     pub fn get_height(&self) -> i32 {
         i32::from_be_bytes(self.height)
     }
+    /// Sets the height field value. This value must be greater than 0.
     pub fn set_height(&mut self, height: i32) -> bool {
         if !Self::is_valid_dimension(height) {
             return false;
@@ -73,7 +78,22 @@ impl IHDR {
 
 // Associated functions
 impl IHDR {
-    pub fn new(width: i32, height: i32, details: IHDRDetails) -> std::io::Result<Self> {
+    /// Provides a new IHDR with the provided width, height and `Result<IHDRDetails>`. The result is
+    /// unwrapped and an error returned if the IHDRDetails is invalid.
+    pub fn new(width: i32, height: i32, details: std::io::Result<IHDRDetails>) -> std::io::Result<Self> {
+        let header = IHDR {
+            details: details?,
+            width: width.to_be_bytes(),
+            height: height.to_be_bytes(),
+        };
+
+        header.validate_dimensions()?;
+
+        Ok(header)
+    }
+    /// Provides a new IHDR with the provided width, height and IHDRDetails. Only validates the dimensions
+    /// of the IHDR, so the user must pass in a valid IHDRDetails struct.
+    pub fn new_from_details(width: i32, height: i32, details: IHDRDetails) -> std::io::Result<Self> {
         let header = IHDR {
             width: width.to_be_bytes(),
             height: height.to_be_bytes(),
@@ -84,6 +104,21 @@ impl IHDR {
 
         Ok(header)
     }
+    /// Provides a new IHDR with the provided width, height and IHDRDetails. No validation
+    ///
+    /// # Safety
+    ///
+    /// This function does no validation of the provided values, and thus may pass back an incorrect
+    /// IHDR.
+    pub unsafe fn new_unchecked(width: i32, height: i32, details: IHDRDetails) -> Self {
+        IHDR {
+            width: width.to_be_bytes(),
+            height: height.to_be_bytes(),
+            details,
+        }
+    }
+    /// Provides a reference to an IHDR provided the chunk_type matches "IHDR" and the size of the data
+    /// matches the size of IHDR.
     pub fn from_chunk_refs(chunk_refs: ChunkRefs) -> Option<&IHDR> {
         if chunk_refs.get_chunk_type() != "IHDR" {
             return None;
@@ -94,6 +129,8 @@ impl IHDR {
 
         Some(unsafe { &*(chunk_refs.get_chunk_data().as_ptr() as *const IHDR) })
     }
+    /// Check if the provided dimension (width or height) is a valid dimension value. Value must be
+    /// greater than 0
     fn is_valid_dimension(dimension: i32) -> bool {
         dimension > 0
     }
@@ -192,6 +229,7 @@ impl IHDRDetails {
 
         Ok(())
     }
+    /// Sets the bit_depth field value
     #[inline(always)]
     pub fn get_bit_depth(&self) -> u8 {
         self.bit_depth
@@ -207,6 +245,8 @@ impl IHDRDetails {
 
         self.bit_depth
     }
+    /// Sets the bit_depth field value. Can fail if the bit depth value is invalid, or the bit depth
+    /// value is invalid for the current color type. If you want to change both, use `set_bit_depth_and_color_type`
     pub fn set_bit_depth(&mut self, bit_depth: u8) -> std::io::Result<()> {
         Self::is_valid_bit_depth(bit_depth)?;
         Self::is_valid_bit_depth_for_color_type(self.color_type, bit_depth)?;
@@ -214,16 +254,21 @@ impl IHDRDetails {
         self.bit_depth = bit_depth;
         Ok(())
     }
+    /// Sets the color_type field value
     #[inline(always)]
     pub fn get_color_type(&self) -> u8 {
         self.color_type
     }
+    /// Sets the color_type field value. Can fail if the current bit depth value is invalid for the
+    /// provided color type. If you want to change both, use `set_bit_depth_and_color_type`
     pub fn set_color_type(&mut self, color_type: u8) -> std::io::Result<()> {
         Self::is_valid_bit_depth_for_color_type(color_type, self.bit_depth)?;
 
         self.color_type = color_type;
         Ok(())
     }
+    /// Sets the bit_depth and color_type field value. Can fail if the bit depth value is invalid, or the bit depth
+    /// value is invalid for the provided color_type.
     pub fn set_bit_depth_and_color_type(&mut self, color_type: u8, bit_depth: u8) -> std::io::Result<()> {
         Self::is_valid_bit_depth(bit_depth)?;
         Self::is_valid_bit_depth_for_color_type(color_type, bit_depth)?;
@@ -233,10 +278,12 @@ impl IHDRDetails {
 
         Ok(())
     }
+    /// Gets the compression_method field value.
     #[inline(always)]
     pub fn get_compression_method(&self) -> u8 {
         self.compression_method
     }
+    /// Sets the compression_method field value. This value must always be 0, in the current spec.
     #[must_use = "Setting will fail if compression method is not set to 0"]
     pub fn set_compression_method(&mut self, compression_method: u8) -> bool {
         if compression_method != 0 {
@@ -245,10 +292,12 @@ impl IHDRDetails {
         self.compression_method = compression_method;
         true
     }
+    /// Gets the filter_method field value.
     #[inline(always)]
     pub fn get_filter_method(&self) -> u8 {
         self.filter_method
     }
+    /// Sets the filter_method field value. This value must always be 0, in the current spec.
     #[must_use = "Setting will fail if filter method is not set to 0"]
     pub fn set_filter_method(&mut self, filter_method: u8) -> bool {
         if filter_method != 0 {
@@ -257,10 +306,13 @@ impl IHDRDetails {
         self.filter_method = filter_method;
         true
     }
+    /// Gets the interlace_method field value.
     #[inline(always)]
     pub fn get_interlace_method(&self) -> u8 {
         self.interlace_method
     }
+    /// Sets the interlace_method field value. This value must always be  0 (no interlace) or 1 (Adam7
+    /// interlace), in the current spec.
     pub fn set_interlace_method(&mut self, interlace_method: u8) -> std::io::Result<()>  {
         Self::is_valid_interlace_method(interlace_method)?;
 
@@ -271,6 +323,7 @@ impl IHDRDetails {
 
 // Associated functions
 impl IHDRDetails {
+    /// Creates a mew `IHDRDetails` structure and validates the given field values are in spec.
     pub fn new(
         bit_depth: u8,
         color_type: u8,
@@ -290,6 +343,8 @@ impl IHDRDetails {
 
         Ok(details)
     }
+    /// Creates a mew `IHDRDetails` structure. Does NOT validate the given field values are in spec.
+    ///
     /// # Safety
     ///
     /// Does not do any validation that you have options set with correct values, use this if you want
@@ -310,6 +365,7 @@ impl IHDRDetails {
             interlace_method,
         }
     }
+    /// Checks the given bit depth given is a valid bit depth. Valid bit depths : 1, 2, 4, 8, 16
     fn is_valid_bit_depth(bit_depth: u8) -> std::io::Result<()> {
         if !VALID_BIT_DEPTHS.contains(&bit_depth) {
             return Err(Error::new(
@@ -324,6 +380,8 @@ impl IHDRDetails {
 
         Ok(())
     }
+    /// Checks if the bit depth value is valid and that the provided color type is valid for the
+    /// provided bit depth. See `color_type` and `bit_depth` fields for more details.
     fn is_valid_bit_depth_for_color_type(color_type: u8, bit_depth: u8) -> std::io::Result<()> {
         let table = COLOR_TYPE_LOOKUP_TABLE[color_type as usize];
         if !table.contains(&bit_depth) {
@@ -342,11 +400,13 @@ impl IHDRDetails {
 
         Ok(())
     }
+    /// Checks if the provided value is a valid interlace method. Must be 1 or 0 in the current spec.
     fn is_valid_interlace_method(interlace_method: u8) -> std::io::Result<()> {
         if interlace_method != 1 && interlace_method != 0 {
             return Err(Error::new(
                 ErrorKind::InvalidData,
-                format!("Invalid interlace method. Must be 1 or 0. interlace method: {}",
+                format!("Invalid interlace method. Must be This value must always be  0 (no \
+                interlace) or 1 (Adam7 interlace), in the current spec. interlace method: {}",
                         interlace_method,
                 ),
             ));
