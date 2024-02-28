@@ -1,5 +1,4 @@
 use std::fmt::{Debug, Formatter};
-
 #[repr(C)]
 pub struct ChunkCRC {
     crc: [u8; 4],

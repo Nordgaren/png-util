@@ -1,1 +1,1 @@
-mod ihdr;
+pub mod ihdr;

@@ -36,7 +36,7 @@ impl ChunkHeader {
     }
     #[must_use = "Setting the length will fail if the `length` parameter is greater than 0x80000000"]
     pub fn set_length(&mut self, length: u32) -> bool {
-        if length > 0x80000000 {
+        if length >= 0x80000000 {
             return false;
         }
 

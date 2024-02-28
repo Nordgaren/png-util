@@ -1,3 +1,4 @@
+// Not sure yet. Idea. Probably need this to get the header data and crc data.
 pub trait PNGChunk
 where
     Self: ChunkHeader,

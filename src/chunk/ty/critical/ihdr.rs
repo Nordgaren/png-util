@@ -78,22 +78,9 @@ impl IHDR {
 
 // Associated functions
 impl IHDR {
-    /// Provides a new IHDR with the provided width, height and `Result<IHDRDetails>`. The result is
-    /// unwrapped and an error returned if the IHDRDetails is invalid.
-    pub fn new(width: i32, height: i32, details: std::io::Result<IHDRDetails>) -> std::io::Result<Self> {
-        let header = IHDR {
-            details: details?,
-            width: width.to_be_bytes(),
-            height: height.to_be_bytes(),
-        };
-
-        header.validate_dimensions()?;
-
-        Ok(header)
-    }
     /// Provides a new IHDR with the provided width, height and IHDRDetails. Only validates the dimensions
     /// of the IHDR, so the user must pass in a valid IHDRDetails struct.
-    pub fn new_from_details(width: i32, height: i32, details: IHDRDetails) -> std::io::Result<Self> {
+    pub fn new(width: i32, height: i32, details: IHDRDetails) -> std::io::Result<Self> {
         let header = IHDR {
             width: width.to_be_bytes(),
             height: height.to_be_bytes(),
@@ -103,23 +90,10 @@ impl IHDR {
         header.validate_dimensions()?;
 
         Ok(header)
-    }
-    /// Provides a new IHDR with the provided width, height and IHDRDetails. No validation
-    ///
-    /// # Safety
-    ///
-    /// This function does no validation of the provided values, and thus may pass back an incorrect
-    /// IHDR.
-    pub unsafe fn new_unchecked(width: i32, height: i32, details: IHDRDetails) -> Self {
-        IHDR {
-            width: width.to_be_bytes(),
-            height: height.to_be_bytes(),
-            details,
-        }
     }
     /// Provides a reference to an IHDR provided the chunk_type matches "IHDR" and the size of the data
     /// matches the size of IHDR.
-    pub fn from_chunk_refs(chunk_refs: ChunkRefs) -> Option<&IHDR> {
+    pub fn from_chunk_refs<'a>(chunk_refs: &'a ChunkRefs<'a>) -> Option<&'a IHDR> {
         if chunk_refs.get_chunk_type() != "IHDR" {
             return None;
         }
@@ -343,28 +317,6 @@ impl IHDRDetails {
 
         Ok(details)
     }
-    /// Creates a mew `IHDRDetails` structure. Does NOT validate the given field values are in spec.
-    ///
-    /// # Safety
-    ///
-    /// Does not do any validation that you have options set with correct values, use this if you want
-    /// to call validate manually, or if you are going to pass it to a function which calls validate on
-    /// the IHDRDetails.
-    pub unsafe fn new_unchecked(
-        bit_depth: u8,
-        color_type: u8,
-        compression_method: u8,
-        filter_method: u8,
-        interlace_method: u8,
-    ) -> Self {
-        IHDRDetails {
-            bit_depth,
-            color_type,
-            compression_method,
-            filter_method,
-            interlace_method,
-        }
-    }
     /// Checks the given bit depth given is a valid bit depth. Valid bit depths : 1, 2, 4, 8, 16
     fn is_valid_bit_depth(bit_depth: u8) -> std::io::Result<()> {
         if !VALID_BIT_DEPTHS.contains(&bit_depth) {
@@ -426,7 +378,8 @@ mod tests {
         let png_file = std::fs::read("ferris.png").expect("Could not read png file");
         let png = PNGReader::new(&png_file[..]).expect("Could not validate PNG.");
 
-        let header = IHDR::from_chunk_refs(png.get_chunk_of_type("IHDR").unwrap()).unwrap();
+        let hdr_chunk = png.get_chunk_of_type("IHDR").unwrap();
+        let header = IHDR::from_chunk_refs(&hdr_chunk).unwrap();
         header.validate().unwrap();
 
         assert_eq!(header.get_width(), 460);

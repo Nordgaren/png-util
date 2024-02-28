@@ -129,14 +129,16 @@ impl PNGChunk {
         }
     }
 }
-
 impl From<ChunkRefs<'_>> for PNGChunk {
+    /// Create a new `PNGChunk` from the provided `ChunkRefs`. Copies the data from the reference to an
+    /// owned type.
     fn from(chunk_info: ChunkRefs) -> Self {
         PNGChunk::new(chunk_info.get_chunk_type(), chunk_info.get_chunk_data()).unwrap()
     }
 }
-
 impl<'a> From<&'a PNGChunk> for ChunkRefs<'a> {
+    /// Turn a `PNGChunk` into `ChunkRefs` to reference the data in the chunk. Does not copy any data and
+    /// returns references to data inside the `PNGChunk`
     fn from(chunk: &'a PNGChunk) -> ChunkRefs<'a> {
         ChunkRefs::new(
             chunk.as_chunk_header(),

@@ -1,6 +1,6 @@
 #![allow(unused)]
 mod consts;
-mod critical;
+pub mod critical;
 
 use crate::chunk::ty::consts::BIT_FIVE_MASK;
 use std::io::{Error, ErrorKind};
