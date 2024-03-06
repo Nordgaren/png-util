@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 buffer-reader = { git = "https://github.com/Nordgaren/buffer-reader.git" }
+bytemuck = {  version = "1.14.3", features = ["derive"] }

@@ -4,6 +4,7 @@ pub mod critical;
 
 use crate::chunk::ty::consts::BIT_FIVE_MASK;
 use std::io::{Error, ErrorKind};
+use bytemuck::AnyBitPattern;
 
 /// A 4-byte chunk type code. For convenience in description and in examining PNG files, type codes
 /// are restricted to consist of uppercase and lowercase ASCII letters (A-Z and a-z, or 65-90 and 97-122
@@ -28,6 +29,7 @@ use std::io::{Error, ErrorKind};
 /// chunk with different properties. Decoders must recognize type codes by a simple four-byte literal
 /// comparison; it is incorrect to perform case conversion on type codes.
 #[repr(C)]
+#[derive(Copy, Clone, AnyBitPattern)]
 pub struct ChunkType {
     /// A 4-byte chunk type code. For convenience in description and in examining PNG files, type codes
     /// are restricted to consist of uppercase and lowercase ASCII letters (A-Z and a-z, or 65-90 and 97-122

@@ -1,5 +1,8 @@
 use std::fmt::{Debug, Formatter};
+use bytemuck::AnyBitPattern;
+
 #[repr(C)]
+#[derive(Copy, Clone, AnyBitPattern)]
 pub struct ChunkCRC {
     crc: [u8; 4],
 }

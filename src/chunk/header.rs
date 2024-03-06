@@ -1,7 +1,9 @@
 use crate::chunk::ty::ChunkType;
 use std::fmt::{Debug, Formatter};
+use bytemuck::AnyBitPattern;
 
 #[repr(C)]
+#[derive(Copy, Clone, AnyBitPattern)]
 pub struct ChunkHeader {
     length: [u8; 4],
     chunk_type: ChunkType,
