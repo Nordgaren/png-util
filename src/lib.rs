@@ -2,10 +2,10 @@ use crate::consts::{PNG_SIGNATURE, PNG_SIGNATURE_LENGTH};
 use chunk::refs::ChunkRefs;
 use std::io::{Error, ErrorKind};
 
-mod builder;
-mod chunk;
-mod consts;
-mod iter;
+pub mod builder;
+pub mod chunk;
+pub mod consts;
+pub mod iter;
 
 /// A Rust type that is able to enumerate and inspect a buffer that is a valid PNG file.
 pub struct PNGReader<'a> {
